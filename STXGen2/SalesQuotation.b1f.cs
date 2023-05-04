@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Xml;
+using System.Linq;
+using System.Text;
 using SAPbouiCOM.Framework;
 
 namespace STXGen2
 {
-    [FormAttribute("STXGen2.Form1", "Form1.b1f")]
-    class Form1 : UserFormBase
+    [FormAttribute("149", "SalesQuotation.b1f")]
+    class SystemForm1 : SystemFormBase
     {
-        public Form1()
+        public SystemForm1()
         {
         }
 
