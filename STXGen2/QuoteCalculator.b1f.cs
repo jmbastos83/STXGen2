@@ -38,6 +38,7 @@ namespace STXGen2
         public static string newImagePath { get; private set; } = "";
         public string parttDescr { get; private set; } = "";
         public int lastBtnOpselection { get; private set; } = 0;
+        
 
         private SAPbouiCOM.EditText QCDocEntry;
         private SAPbouiCOM.EditText QCItemCode;
@@ -121,7 +122,7 @@ namespace STXGen2
             this.QCNElem = ((SAPbouiCOM.EditText)(this.GetItem("QCNElem").Specific));
             this.QCPartName = ((SAPbouiCOM.EditText)(this.GetItem("QCPartN").Specific));
             this.ButtonOk = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
-            //this.ButtonOk.ClickBefore += new SAPbouiCOM._IButtonEvents_ClickBeforeEventHandler(this.ButtonOk_ClickBefore);
+            //  this.ButtonOk.ClickBefore += new SAPbouiCOM._IButtonEvents_ClickBeforeEventHandler(this.ButtonOk_ClickBefore);
             this.ButtonOk.ClickAfter += new SAPbouiCOM._IButtonEvents_ClickAfterEventHandler(this.ButtonOk_ClickAfter);
             this.ButtonOk.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.ButtonOk_PressedAfter);
             this.ButtonOk.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.ButtonOk_PressedBefore);
@@ -135,6 +136,7 @@ namespace STXGen2
             this.mTextures.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mTextures_ClickAfter);
             this.mTextures.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mTextures_ChooseFromListAfter);
             this.mOCosts = ((SAPbouiCOM.Matrix)(this.GetItem("mOCosts").Specific));
+            this.mOCosts.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOCosts_ClickAfter);
             this.QCPartDesc = ((SAPbouiCOM.EditText)(this.GetItem("QCPartDesc").Specific));
             this.QCPartType = ((SAPbouiCOM.EditText)(this.GetItem("QCPartType").Specific));
             this.QCPartType.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.QCPartType_ChooseFromListAfter);
@@ -214,13 +216,14 @@ namespace STXGen2
             this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_39").Specific));
             this.StaticText20 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_40").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
+            this.mOperations.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOperations_ClickAfter);
             this.mOperations.LostFocusAfter += new SAPbouiCOM._IMatrixEvents_LostFocusAfterEventHandler(this.mOperations_LostFocusAfter);
             this.BtnGetOPC = ((SAPbouiCOM.ButtonCombo)(this.GetItem("btnGetOp").Specific));
             this.BtnGetOPC.PressedAfter += new SAPbouiCOM._IButtonComboEvents_PressedAfterEventHandler(this.BtnGetOPC_PressedAfter);
             this.BtnGetOPC.ComboSelectAfter += new SAPbouiCOM._IButtonComboEvents_ComboSelectAfterEventHandler(this.BtnGetOPC_ComboSelectAfter);
-            //            this.btnGetOP = ((SAPbouiCOM.Button)(this.GetItem("btnGetOP").Specific));
-            //            this.btnGetOP.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnGetOP_PressedAfter);
-            //            this.btnGetOP.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.btnGetOP_PressedBefore);
+            //              this.btnGetOP = ((SAPbouiCOM.Button)(this.GetItem("btnGetOP").Specific));
+            //              this.btnGetOP.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnGetOP_PressedAfter);
+            //              this.btnGetOP.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.btnGetOP_PressedBefore);
             this.OnCustomInitialize();
 
         }
@@ -231,6 +234,8 @@ namespace STXGen2
         public override void OnInitializeFormEvents()
         {
             this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
+            this.UnloadAfter += new UnloadAfterHandler(this.Form_UnloadAfter);
+
         }
 
 
@@ -414,6 +419,7 @@ namespace STXGen2
 
         private void mTextures_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
         {
+            SAPbouiCOM.DataTable selectedDataTable = null;
             try
             {
                 var application = Program.SBO_Application;
@@ -421,12 +427,18 @@ namespace STXGen2
 
                 if (pVal.ItemUID == "mTextures" && pVal.ColUID == "QCTexture")
                 {
+                    
+                    if (isChooseFromListTriggered)
+                    {
+                        isChooseFromListTriggered = false;
+                        return;
+                    }
                     SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
                     string chooseFromListId = chooseFromListEventArg.ChooseFromListUID;
                     SAPbouiCOM.ChooseFromList chooseFromList = oForm.ChooseFromLists.Item(chooseFromListId);
 
                     // Get the selected item from the Choose From List
-                    SAPbouiCOM.DataTable selectedDataTable = chooseFromListEventArg.SelectedObjects;
+                    selectedDataTable = chooseFromListEventArg.SelectedObjects;
                     if (selectedDataTable != null && selectedDataTable.Rows.Count > 0)
                     {
                         string TextureCode = selectedDataTable.GetValue("Code", 0).ToString();
@@ -434,14 +446,13 @@ namespace STXGen2
 
                         SAPbouiCOM.Matrix mtxTextures = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mTextures").Specific;
 
-                        mtxTextures.FlushToDataSource(); // Update the matrix data source
-
+                        isChooseFromListTriggered = true;
                         ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCQuantity").Cells.Item(selectedMatrixRow).Specific).Value = "1";
                         ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCCovA").Cells.Item(selectedMatrixRow).Specific).Value = "0 " + selectedUOM + "²";
                         ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(selectedMatrixRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
                         ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(selectedMatrixRow).Specific).Select("2", BoSearchKey.psk_ByValue);
                         ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(selectedMatrixRow).Specific).Value = TextureCode;
-
+                        //mtxTextures.AddRow();
                     }
                 }
 
@@ -453,11 +464,7 @@ namespace STXGen2
             }
         }
 
-        private void mTextures_ClickAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            selectedMatrixRow = pVal.Row;
 
-        }
 
         private void mTextures_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -749,6 +756,7 @@ namespace STXGen2
         private StaticText StaticText20;
         private string sapToolsFolder;
         private string newImageFilename;
+        private bool isChooseFromListTriggered;
 
         private void ButtonOk_PressedBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
@@ -769,45 +777,7 @@ namespace STXGen2
             {
                 ToolImg.Picture = "";
             }
-            //if (QCEvents.operationsUpdate)
-            //{
-            //    try
-            //    {
-
-            //        mOperations.FlushToDataSource();
-
-            //        // Disable the update button while the operation is running
-            //        ButtonOk.Item.Enabled = false;
-
-            //        // Freeze the form
-            //        this.UIAPIRawForm.Freeze(true);
-
-            //        DBCalls.UpdateOperationsDB(this.UIAPIRawForm);
-
-            //        // Display a message to the user
-            //        Program.SBO_Application.SetStatusBarMessage("Operations updated.", BoMessageTime.bmt_Medium, false);
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, true);
-            //    }
-            //    finally
-            //    {
-            //        mOperations.Clear();
-            //        mOperations.LoadFromDataSource();
-
-            //        this.UIAPIRawForm.Freeze(false);
-
-            //        // Enable the update button
-            //        ButtonOk.Item.Enabled = true;
-            //        MatrixOperations.BindDataToMatrix(this.UIAPIRawForm);
-
-            //        mOperations.LoadFromDataSource();
-            //        this.UIAPIRawForm.Refresh();
-            //    }
-            //}
-
-        }
+         }
 
 
         private void ToolImg_DoubleClickAfter(object sboObject, SBOItemEventArg pVal)
@@ -1013,6 +983,7 @@ namespace STXGen2
 
         private void ButtonCancel_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
+            //selectedMatrixRow = 0;
             //QCEvents.operationsUpdate = false;
             //if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
             //{
@@ -1023,18 +994,20 @@ namespace STXGen2
 
         private void ButtonOk_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
-            if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
-            {
-                QCEvents.operationsUpdate = false;
-                SAPbouiCOM.DataTable mOperations = QCEvents.operations;
-                string qCDocEntry = this.QCDocEntry.Value;
+            
+            //if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
+            //{
+                
+            //    QCEvents.operationsUpdate = false;
+            //    SAPbouiCOM.DataTable mOperations = QCEvents.operations;
+            //    string qCDocEntry = this.QCDocEntry.Value;
 
-                // Convert the SAPbouiCOM.DataTable to a .NET DataTable object
-                System.Data.DataTable mOperationsConverted = ConvertToDataTable(mOperations);
+            //    // Convert the SAPbouiCOM.DataTable to a .NET DataTable object
+            //    System.Data.DataTable mOperationsConverted = ConvertToDataTable(mOperations);
 
-                Thread updateThread = new Thread(() => DBCalls.UpdateOperationsDB(mOperationsConverted, qCDocEntry));
-                updateThread.Start();
-            }
+            //    Thread updateThread = new Thread(() => DBCalls.UpdateOperationsDB(mOperationsConverted, qCDocEntry));
+            //    updateThread.Start();
+            //}
         }
         private System.Data.DataTable ConvertToDataTable(SAPbouiCOM.DataTable sapDataTable)
         {
@@ -1058,17 +1031,46 @@ namespace STXGen2
             return dt;
         }
 
-        //private SAPbouiCOM. ButtonOk_ClickBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
-        //{
-        //    BubbleEvent = true;
-        //    if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
-        //    {
-        //        QCEvents.operationsUpdate = false;
 
-        //        return (QCEvents.operations, this.QCDocEntry);
 
-        //    }
+        private void mOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            QCEvents.lastClickedMatrixUID = pVal.ItemUID;
 
-        //}
+        }
+
+        private void mOCosts_ClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            QCEvents.lastClickedMatrixUID = pVal.ItemUID;
+
+        }
+
+        private void mTextures_ClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            QCEvents.lastClickedMatrixUID = pVal.ItemUID;
+            selectedMatrixRow = pVal.Row;
+
+        }
+
+        private void Form_UnloadAfter(SBOItemEventArg pVal)
+        {
+            QuoteCalculator.mtxMaxLineID = 0;
+            selectedMatrixRow = 0;
+
+            if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
+            {
+
+                QCEvents.operationsUpdate = false;
+                SAPbouiCOM.DataTable mOperations = QCEvents.operations;
+                string qCDocEntry = this.QCDocEntry.Value;
+
+                // Convert the SAPbouiCOM.DataTable to a .NET DataTable object
+                System.Data.DataTable mOperationsConverted = ConvertToDataTable(mOperations);
+
+                Thread updateThread = new Thread(() => DBCalls.UpdateOperationsDB(mOperationsConverted, qCDocEntry));
+                updateThread.Start();
+
+            }
+        }
     }
 }

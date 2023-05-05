@@ -7,6 +7,8 @@ namespace STXGen2
 {
     internal class SAPEvents
     {
+        
+
         public static List<int> deletedTexturesList = new List<int>();
 
         private static SAPbouiCOM.Form oForm;
@@ -176,69 +178,6 @@ namespace STXGen2
 
         }
 
-
-
-
-
-        //internal static void SBO_Application_ItemEvent(string FormUID, ref ItemEvent pVal, out bool BubbleEvent)
-        //{
-        //    BubbleEvent = true;
-
-        //    if (pVal.FormTypeEx == "STXGen2.QuoteCalculator" && pVal.EventType == BoEventTypes.et_CLICK && pVal.ItemUID == "mTextures" && !pVal.BeforeAction)
-        //    {
-        //        selectedMatrixRow = pVal.Row;
-        //    }
-
-        //    if (pVal.FormTypeEx == "STXGen2.QuoteCalculator" && pVal.EventType == BoEventTypes.et_PICKER_CLICKED && pVal.BeforeAction)
-        //    {
-        //        // Handle Picker Clicked event for the QuoteCalculator form
-        //        if (pVal.ItemUID == "mTextures" && pVal.ColUID == "QCTexture")
-        //        {
-        //            AddedRowIndex = pVal.Row;
-        //        }
-        //    }
-
-        //    if (pVal.FormTypeEx == "STXGen2.QuoteCalculator" && pVal.EventType == BoEventTypes.et_CHOOSE_FROM_LIST && !pVal.BeforeAction)
-        //    {
-        //        // Handle Choose From List event for the QuoteCalculator form
-        //        SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
-        //        SAPbouiCOM.IChooseFromListEvent oCFLEvent = (SAPbouiCOM.IChooseFromListEvent)pVal;
-
-        //        if (oCFLEvent.ChooseFromListUID == "cflTexture" && pVal.ItemUID == "mTextures" && pVal.ColUID == "QCTexture")
-        //        {
-        //            // Retrieve the selected item from the Choose From List event
-        //            DataTable oDataTable = oCFLEvent.SelectedObjects;
-        //            if (oDataTable != null && oDataTable.Rows.Count > 0)
-        //            {
-        //                string selectedItemCode = oDataTable.GetValue("Code", 0).ToString();
-        //                SAPbouiCOM.Matrix mtxTextures = (SAPbouiCOM.Matrix)oForm.Items.Item("mTextures").Specific;
-        //                mtxTextures.FlushToDataSource(); // Update the matrix data source
-
-        //                int currentRow = pVal.Row == 0 ? AddedRowIndex : pVal.Row;
-        //                if (currentRow >= 1 && currentRow <= mtxTextures.RowCount)
-        //                {
-        //                    // Update the QCTexture column
-        //                    ((EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(currentRow).Specific).Value = selectedItemCode;
-
-        //                    // Perform any additional logic or validations here
-        //                    (string qty, string TextClass) = DBCalls.GetTextureInfo(selectedItemCode);
-
-        //                    // Update the QCQuantity and QCGComp columns
-        //                    ((EditText)mtxTextures.Columns.Item("QCQuantity").Cells.Item(currentRow).Specific).Value = qty;
-        //                    ((EditText)mtxTextures.Columns.Item("U_tCov").Cells.Item(currentRow).Specific).Value = qty;
-        //                    ((ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(currentRow).Specific).Select(TextClass, BoSearchKey.psk_ByValue);
-        //                    ((ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(currentRow).Specific).Select("2", BoSearchKey.psk_ByValue);
-
-        //                    // Refresh the matrix
-        //                    mtxTextures.FlushToDataSource();
-        //                    mtxTextures.LoadFromDataSource();
-        //                }
-
-        //            }
-        //        }
-        //    }
-
-        //}
 
         internal static void SBO_Application_AppEvent(BoAppEventTypes EventType)
         {
