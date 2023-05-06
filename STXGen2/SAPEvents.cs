@@ -14,11 +14,13 @@ namespace STXGen2
         private static SAPbouiCOM.Form oForm;
 
         private static float exRate = 1;
+        private static bool isEventBeingProcessed = false;
 
         public static string itemCode { get; private set; }
         public static string itemName { get; private set; }
         public static string mLinenum { get; private set; }
         public static string qcid { get; private set; }
+        public static string lastClickedMatrixUID { get; set; }
 
         internal static void SBO_Application_RightClickEvent(ref ContextMenuInfo eventInfo, out bool BubbleEvent)
         {
@@ -98,11 +100,14 @@ namespace STXGen2
         {
             BubbleEvent = true;
 
-            if (pVal.BeforeAction && pVal.MenuUID == "QCalc")
+            if (isEventBeingProcessed)
             {
-                Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-                if (activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") // Sales Quotation form.
-                {
+                return;
+            }
+
+            Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
+            if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc") // Sales Quotation form.
+            {
                     Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific; // The item matrix in the Sales Quotation form.
                     int selectedRow = itemMatrix.GetNextSelectedRow();
 
@@ -165,18 +170,81 @@ namespace STXGen2
 
                         QuoteCalculator frmQCalc = new QuoteCalculator();
                         frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate);
-                       
+
                     }
                     else
                     {
                         Program.SBO_Application.SetStatusBarMessage("Please select a row in the item matrix.", BoMessageTime.bmt_Short, false);
                     }
+            }
+            else
+            if (activeForm.TypeEx == "STXGen2.QuoteCalculator")
+            {
+                // Handle events for the add-on form
+                if ((pVal.MenuUID == "1292" || pVal.MenuUID == "1293") && !pVal.BeforeAction)
+                {
+                    //SAPbouiCOM.Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
+                    //if (activeForm.TypeEx == "STXGen2.QuoteCalculator")
+                    //{
+                    if (!string.IsNullOrEmpty(lastClickedMatrixUID))
+                    {
+                        SAPbouiCOM.Matrix activeMatrix = (SAPbouiCOM.Matrix)activeForm.Items.Item(lastClickedMatrixUID).Specific;
+                        int selectedRow = QuoteCalculator.selectedMatrixRow;
+                        HandleQCMatrixMenuEvent(Program.SBO_Application, ref pVal, activeMatrix, selectedRow);
+                        return;
+                    }
+                    else
+                    {
+                        SAPbouiCOM.Framework.Application.SBO_Application.MessageBox("No matrix clicked.");
+                    }
                 }
             }
+        }
+
+        private static void HandleQCMatrixMenuEvent(SAPbouiCOM.Application sBO_Application, ref MenuEvent pVal, Matrix activeMatrix, int selectedRow)
+        {
+            try
+            {
+                SAPbouiCOM.Form oForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
+                if (pVal.MenuUID == "1292" && !pVal.BeforeAction)
+                {
+                    if (SAPEvents.lastClickedMatrixUID == "mTextures")
+                    {
+                        QCEvents.AddLineToTexturesMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
 
 
+                    }
+                    else if (SAPEvents.lastClickedMatrixUID == "mOper")
+                    {
+                        QCEvents.AddLineToOperationMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
+                    }
+                }
+                else if (pVal.MenuUID == "1293" && !pVal.BeforeAction)
+                {
+
+                    if (SAPEvents.lastClickedMatrixUID == "mTextures")
+                    {
+                        QCEvents.RemoveLinefromTexturesMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
+
+
+                    }
+                    else if (SAPEvents.lastClickedMatrixUID == "mOper")
+                    {
+                        QCEvents.RemoveLinefromOperationMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
+                    }
+
+                   
+                }
+
+            }
+            catch (Exception ex)
+            {
+                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, true);
+            }
 
         }
+
+
 
 
         internal static void SBO_Application_AppEvent(BoAppEventTypes EventType)

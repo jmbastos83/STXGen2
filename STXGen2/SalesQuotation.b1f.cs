@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using SAPbouiCOM;
 using SAPbouiCOM.Framework;
 
 namespace STXGen2
@@ -11,6 +12,7 @@ namespace STXGen2
     {
         public SystemForm1()
         {
+          
         }
 
         /// <summary>

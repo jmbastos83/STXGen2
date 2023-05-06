@@ -20,192 +20,137 @@ namespace STXGen2
 
         public readonly object MatrixLock = new object();
         public static SAPbouiCOM.DataTable operations;
-        public static string lastClickedMatrixUID { get; set; }
+        public static bool _processChooseFromList = false;
+        public static Dictionary<int, string> _pendingCFLUpdates = new Dictionary<int, string>();
+
         public static string defValue { get; set; }
         public static object QCLength { get; private set; }
         public static int processOperationsListErr { get; private set; } = 0;
         public static bool operationsUpdate { get; set; } = false;
 
-        //private static int selectedMatrixRow = -1;
 
-        internal static void SBO_Application_MenuEvent(ref MenuEvent pVal, out bool BubbleEvent)
-        {
-            BubbleEvent = true;
-            try
-            {
-                // Call the HandleMatrixMenuEvent method for the "Add Line" and "Remove Line" menu items
-                if ((pVal.MenuUID == "1292" || pVal.MenuUID == "1293") && !pVal.BeforeAction)
-                {
-                    SAPbouiCOM.Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-                    if (activeForm.TypeEx == "STXGen2.QuoteCalculator")
-                    {
-                        if (!string.IsNullOrEmpty(lastClickedMatrixUID))
-                        {
-                            SAPbouiCOM.Matrix activeMatrix = (SAPbouiCOM.Matrix)activeForm.Items.Item(lastClickedMatrixUID).Specific;
-                            int selectedRow = QuoteCalculator.selectedMatrixRow;
-                            HandleQCMatrixMenuEvent(Program.SBO_Application, ref pVal, activeMatrix, selectedRow);
-                        }
-                        else
-                        {
-                            SAPbouiCOM.Framework.Application.SBO_Application.MessageBox("No matrix clicked.");
-                        }
-                    }
-                    else
-                    {
-                        SAPbouiCOM.Framework.Application.SBO_Application.MessageBox("Active form type doesn't match.");
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, true);
-            }
-
-
-        }
-
-        private static void HandleQCMatrixMenuEvent(SAPbouiCOM.Application sBO_Application, ref MenuEvent pVal, Matrix activeMatrix, int selectedRow)
-        {
-            try
-            {
-                SAPbouiCOM.Form oForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-                if (pVal.MenuUID == "1292" && !pVal.BeforeAction)
-                {
-                    if (lastClickedMatrixUID == "mTextures")
-                    {
-                        AddLineToTexturesMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
-
-
-                    }
-                    else if (lastClickedMatrixUID == "mOper")
-                    {
-                        AddLineToOperationMatrix(oForm, activeMatrix, QuoteCalculator.selectedMatrixRow);
-                    }
-                }
-                else if (pVal.MenuUID == "1293" && !pVal.BeforeAction)
-                {
-
-                    //if (QuoteCalculator.selectedMatrixRow > 0)
-                    //{
-                    //    SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
-
-                    //    // Remove the row from the data source
-                    //    oDBDataSource.RemoveRecord(QuoteCalculator.selectedMatrixRow - 1);
-
-                    //    // Update the # aka LineID column
-                    //    for (int i = QuoteCalculator.selectedMatrixRow - 1; i < oDBDataSource.Size; i++)
-                    //    {
-                    //        oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
-                    //    }
-
-                    //    // Refresh the matrix
-                    //    texturesMatrix.LoadFromDataSource();
-
-                    //    // Set this property to prevent the selection of the row after deletion.
-                    //    texturesMatrix.SelectionMode = BoMatrixSelect.ms_None;
-
-                    //    // Set the selection mode back to the default after loading the data source.
-                    //    texturesMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
-                    //}
-                }
-            }
-            catch (Exception ex)
-            {
-                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, true);
-            }
-
-        }
-
-        private static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedMatrixRow)
+        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedMatrixRow)
         {
             throw new NotImplementedException();
         }
 
-        private static void AddLineToTexturesMatrix(SAPbouiCOM.Form oForm, SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
+        public static void AddLineToTexturesMatrix(SAPbouiCOM.Form oForm, SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
         {
+            oForm.Freeze(true);
 
-            if (selectedRow == -1)
+            if (texturesMatrix.RowCount == 5)
             {
-                selectedRow = texturesMatrix.RowCount;
+                Program.SBO_Application.SetStatusBarMessage("Maximum number of textures reached.",BoMessageTime.bmt_Medium,false);
+                return;
             }
-
-            if (texturesMatrix.RowCount < 5)
+            if (texturesMatrix.RowCount == 0 || selectedRow == texturesMatrix.RowCount)
             {
+                texturesMatrix.AddRow();
+                texturesMatrix.ClearRowData(selectedRow + 1);
+
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
 
-                // Update the VisOrder column for rows below the new row
-                for (int i = texturesMatrix.RowCount - 1; i >= selectedRow; i--)
-                {
-                    oDBDataSource.SetValue("VisOrder", i, (i + 2).ToString());
-                }
-
-                // Add a new row in the data source
                 oDBDataSource.InsertRecord(selectedRow);
                 oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
 
-                // Set the LineID value to the max LineID + 1
-                int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxMaxLineID;
-                oDBDataSource.SetValue("LineID", selectedRow, (maxLineID + 1).ToString());
-
-                QuoteCalculator.mtxMaxLineID = maxLineID + 1;
-
-                // Refresh the matrix
                 texturesMatrix.LoadFromDataSource();
 
-                int textureColumnIndex = -1;
-                for (int i = 1; i <= texturesMatrix.Columns.Count; i++)
-                {
-                    if (texturesMatrix.Columns.Item(i).UniqueID == "QCTexture")
-                    {
-                        textureColumnIndex = i;
-                        break;
-                    }
-                }
-                texturesMatrix.SetCellFocus(selectedRow, textureColumnIndex);
-                
             }
+            else
+            {
+                if (selectedRow == -1 || selectedRow > texturesMatrix.RowCount)
+                {
+                    selectedRow = texturesMatrix.RowCount;
+                }
+
+                //Console.WriteLine($"Selected row: {selectedRow}");
+                //Console.WriteLine($"Matrix row count: {texturesMatrix.RowCount}");
+
+                if (texturesMatrix.RowCount < 5)
+                {
+                    // Store the values of the rows to be moved down
+                    List<Dictionary<int, string>> rowsData = new List<Dictionary<int, string>>();
+                    for (int rowIndex = selectedRow + 1; rowIndex <= texturesMatrix.RowCount; rowIndex++)
+                    {
+                        //Console.WriteLine($"Storing row: {rowIndex}");
+                        rowsData.Add(new Dictionary<int, string>());
+                        for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
+                        {
+                            var cell = texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex).Specific;
+                            if (cell is SAPbouiCOM.EditText editText)
+                            {
+                                if (texturesMatrix.Columns.Item(colIndex).UniqueID == "#")
+                                {
+                                    rowsData[rowIndex - (selectedRow + 1)][colIndex] = (int.Parse(editText.Value) + 1).ToString();
+                                }
+                                else
+                                {
+                                    rowsData[rowIndex - (selectedRow + 1)][colIndex] = editText.Value.ToString();
+                                }
+
+                            }
+                            if (cell is SAPbouiCOM.LinkedButton linkButton)
+                            {
+                                rowsData[rowIndex - (selectedRow + 1)][colIndex] = ((SAPbouiCOM.EditText)linkButton.Item.Specific).Value;
+                            }
+                            if (cell is SAPbouiCOM.ComboBox comboBox)
+                            {
+                                rowsData[rowIndex - (selectedRow + 1)][colIndex] = comboBox.Selected.Value.ToString();
+                            }
+                        }
+                    }
+
+                    // Add a new row in the data source
+                    SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
+
+                    oDBDataSource.InsertRecord(selectedRow + 1);
+                    oDBDataSource.SetValue("VisOrder", selectedRow + 1, (selectedRow + 1).ToString());
 
 
+                    // Set the LineID value to the max LineID + 1
+                    int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxMaxLineID;
+                    oDBDataSource.SetValue("LineID", selectedRow + 1, (maxLineID + 1).ToString());
+                    QuoteCalculator.mtxMaxLineID = maxLineID + 1;
 
-            //if (selectedRow == -1)
-            //{
-            //    selectedRow = texturesMatrix.RowCount;
-            //}
+                    // Refresh the matrix
+                    texturesMatrix.LoadFromDataSource();
 
-            //if (texturesMatrix.RowCount < 5)
-            //{
-            //    SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
+                    texturesMatrix.ClearRowData(selectedRow + 1);
 
-            //    // Update the VisOrder column for rows below the new row
-            //    for (int i = texturesMatrix.RowCount - 1; i >= selectedRow; i--)
-            //    {
-            //        oDBDataSource.SetValue("VisOrder", i, (i + 2).ToString());
-            //    }
+                    texturesMatrix.FlushToDataSource();
 
-            //    // Add a new row in the data source
-            //    oDBDataSource.InsertRecord(selectedRow);
-            //    oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
 
-            //    // Set the LineID value to the max LineID + 1
-            //    int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxMaxLineID;
-            //    oDBDataSource.SetValue("LineID", selectedRow, (maxLineID + 1).ToString());
+                    
+                    for (int rowIndex = 0; rowIndex < rowsData.Count; rowIndex++)
+                    {
 
-            //    QuoteCalculator.mtxMaxLineID = maxLineID + 1;
+                        //Console.WriteLine($"Restoring row: {rowIndex}");
+                        for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
+                        {
+                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_EDIT)
+                            {
+                                ((SAPbouiCOM.EditText)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Value = rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "";
+                                if (colIndex == 0)
+                                {
+                                    texturesMatrix.FlushToDataSource();
+                                }
+                            }
+                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_COMBO_BOX)
+                            {
+                                ((SAPbouiCOM.ComboBox)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Select(rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "0", BoSearchKey.psk_ByValue);
+                            }
+                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_LINKED_BUTTON)
+                            {
+                                oDBDataSource.SetValue("U_Texture", (rowIndex + (selectedRow + 1)), rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "");
+                                texturesMatrix.LoadFromDataSource();
+                            }
+                        }
 
-            //    // Refresh the matrix
-            //    texturesMatrix.LoadFromDataSource();
-
-            //    int textureColumnIndex = -1;
-            //    for (int i = 1; i <= texturesMatrix.Columns.Count; i++)
-            //    {
-            //        if (texturesMatrix.Columns.Item(i).UniqueID == "QCTexture")
-            //        {
-            //            textureColumnIndex = i;
-            //            break;
-            //        }
-            //    }
-            //    texturesMatrix.SetCellFocus(selectedRow + 1, textureColumnIndex);
-            //}
+                    }
+                    texturesMatrix.SetCellFocus(selectedRow, 1);
+                }
+            }
+            oForm.Freeze(false);
         }
 
         internal static void FillTextureClass(IForm uIAPIRawForm)
@@ -281,14 +226,10 @@ namespace STXGen2
 
             if (string.IsNullOrEmpty(sUOM))
             {
-                //QuoteCalculator.selectedUOM = defValue;
-                //QuoteCalculator.previousUOM = defValue;
                 UnMsr.Select(defValue, SAPbouiCOM.BoSearchKey.psk_ByValue);
             }
             else
             {
-                //QuoteCalculator.selectedUOM = sUOM;
-                //QuoteCalculator.previousUOM = sUOM;
                 UnMsr.Select(sUOM, SAPbouiCOM.BoSearchKey.psk_ByValue);
             }
 
@@ -397,6 +338,58 @@ namespace STXGen2
             }
 
             return mTexturesValues;
+        }
+
+        internal static void RemoveLinefromOperationMatrix(SAPbouiCOM.Form oForm, Matrix OperationsMatrix, int selectedMatrixRow)
+        {
+            if (QuoteCalculator.selectedMatrixRow > 0)
+            {
+                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
+
+                // Remove the row from the data source
+                oDBDataSource.RemoveRecord(QuoteCalculator.selectedMatrixRow - 1);
+
+                // Update the # aka LineID column
+                for (int i = QuoteCalculator.selectedMatrixRow - 1; i < oDBDataSource.Size; i++)
+                {
+                    oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
+                }
+
+                // Refresh the matrix
+                OperationsMatrix.LoadFromDataSource();
+
+                // Set this property to prevent the selection of the row after deletion.
+                OperationsMatrix.SelectionMode = BoMatrixSelect.ms_None;
+
+                // Set the selection mode back to the default after loading the data source.
+                OperationsMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
+            }
+        }
+
+        internal static void RemoveLinefromTexturesMatrix(SAPbouiCOM.Form oForm, Matrix texturesMatrix, int selectedMatrixRow)
+        {
+            if (QuoteCalculator.selectedMatrixRow > 0)
+            {
+                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
+
+                // Remove the row from the data source
+                oDBDataSource.RemoveRecord(QuoteCalculator.selectedMatrixRow - 1);
+
+                // Update the # aka LineID column
+                for (int i = QuoteCalculator.selectedMatrixRow - 1; i < oDBDataSource.Size; i++)
+                {
+                    oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
+                }
+
+                // Refresh the matrix
+                texturesMatrix.LoadFromDataSource();
+
+                // Set this property to prevent the selection of the row after deletion.
+                texturesMatrix.SelectionMode = BoMatrixSelect.ms_None;
+
+                // Set the selection mode back to the default after loading the data source.
+                texturesMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
+            }
         }
 
         internal static (string AdditionalConditions, string ConcatenatedTextureCodes, string tClassExpression, string OpQuantityExpression) GetAdditionalConditions(List<Dictionary<string, string>> matrix1Values)
@@ -546,6 +539,7 @@ namespace STXGen2
                     mOperations.Columns.Item("OPUom").DataBind.Bind(dataTableID, "OPUom");
                     mOperations.Columns.Item("OPCost").DataBind.Bind(dataTableID, "OPCost");
                     mOperations.Columns.Item("OPTotal").DataBind.Bind(dataTableID, "OPTotal");
+                    mOperations.Columns.Item("OPErrMsg").DataBind.Bind(dataTableID, "OPErrMsg");
 
                     // Bind check boxes using UserDataSources
                     for (int i = 0; i < operationscount; i++)
@@ -556,6 +550,7 @@ namespace STXGen2
                             uIAPIRawForm.DataSources.UserDataSources.Add(checkUDSId, BoDataType.dt_SHORT_TEXT, 1);
                         }
                         mOperations.Columns.Item("OPcheck").DataBind.SetBound(true, "", checkUDSId);
+
                     }
 
                     // Load data from the DataTable to the matrix
@@ -571,6 +566,7 @@ namespace STXGen2
                     }
 
                     mOperations.AutoResizeColumns();
+                    SetMatrixRowColor(mOperations, "OPErrMsg");
                     uIAPIRawForm.Freeze(false);
 
                 }
@@ -583,9 +579,30 @@ namespace STXGen2
                     operationsUpdate = true;
 
                     mOperations.FlushToDataSource();
+                    
                     uIAPIRawForm.Mode = BoFormMode.fm_UPDATE_MODE;
 
-                    Program.SBO_Application.SetStatusBarMessage("Operations matrix updated.", BoMessageTime.bmt_Medium, false);
+                    Program.SBO_Application.SetStatusBarMessage("Operations matrix updated.", BoMessageTime.bmt_Short, false);
+                }
+            }
+        }
+
+        private static void SetMatrixRowColor(SAPbouiCOM.Matrix mOperations, string colUID)
+        {
+            Color orangeColor = Color.FromArgb(0xFF, 0xD1, 0x55);
+            int warning = (orangeColor.R) + (orangeColor.G << 8) + (orangeColor.B << 16);
+
+            for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
+            {
+                SAPbouiCOM.EditText cell = (SAPbouiCOM.EditText)mOperations.Columns.Item(colUID).Cells.Item(rowIndex).Specific;
+                if (!string.IsNullOrEmpty(cell.Value))
+                {
+                    ((SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific).Checked = true;
+                    mOperations.CommonSetting.SetRowBackColor(rowIndex, warning);
+                }
+                else
+                {
+                    mOperations.CommonSetting.SetRowBackColor(rowIndex, -1); // Reset to default color
                 }
             }
         }
