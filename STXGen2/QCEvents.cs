@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using SAPbouiCOM;
+using STXGen2.Properties;
 
 namespace STXGen2
 {
@@ -477,42 +478,20 @@ namespace STXGen2
 
         private static void processMTOperationsList(IForm uIAPIRawForm, Matrix mOperations, List<Dictionary<string, string>> mtTexture)
         {
-
-
-            bool dataTableExists = false;
-
             var (CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression) = QCEvents.GetAdditionalConditions(mtTexture);
 
             // Create a unique identifier for the DataTable
             string dataTableID = "Operations";
-
+            SAPbouiCOM.DataTable operations;
 
             // Check if the DataTable with the ID "Operations" exists
-            for (int i = 0; i < uIAPIRawForm.DataSources.DataTables.Count; i++)
+            if (!DataTableExists(uIAPIRawForm, dataTableID))
             {
-                SAPbouiCOM.DataTable dt = uIAPIRawForm.DataSources.DataTables.Item(i);
-                if (dt.UniqueID == dataTableID)
-                {
-                    dataTableExists = true;
-                    break;
-                }
-            }
-
-            if (!dataTableExists)
-            {
-                uIAPIRawForm.DataSources.DataTables.Add(dataTableID);
-                operations = uIAPIRawForm.DataSources.DataTables.Item(dataTableID);
+                operations = uIAPIRawForm.DataSources.DataTables.Add(dataTableID);
             }
             else
             {
                 operations = uIAPIRawForm.DataSources.DataTables.Item(dataTableID);
-            }
-
-            Dictionary<string, int> mOperationsRowIndexMap = new Dictionary<string, int>();
-            for (int j = 1; j <= mOperations.RowCount; j++)
-            {
-                string existingVisOrder = ((SAPbouiCOM.EditText)mOperations.Columns.Item("#").Cells.Item(j).Specific).Value;
-                mOperationsRowIndexMap[existingVisOrder] = j;
             }
 
             DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value);
@@ -527,47 +506,18 @@ namespace STXGen2
                     mOperations.Clear();
 
                     // Bind the DataTable columns to the matrix columns
-                    mOperations.Columns.Item("#").DataBind.Bind(dataTableID, "VisOrder");
-                    mOperations.Columns.Item("OPTexture").DataBind.Bind(dataTableID, "OPTexture");
-                    mOperations.Columns.Item("OPResc").DataBind.Bind(dataTableID, "OPResc");
-                    mOperations.Columns.Item("OPResN").DataBind.Bind(dataTableID, "OPResN");
-                    mOperations.Columns.Item("OPcode").DataBind.Bind(dataTableID, "OPcode");
-                    mOperations.Columns.Item("OPName").DataBind.Bind(dataTableID, "OPName");
-                    mOperations.Columns.Item("OPNameL").DataBind.Bind(dataTableID, "OPNameL");
-                    mOperations.Columns.Item("OPStdT").DataBind.Bind(dataTableID, "OPStdT");
-                    mOperations.Columns.Item("OPQtdT").DataBind.Bind(dataTableID, "OPQtdT");
-                    mOperations.Columns.Item("OPUom").DataBind.Bind(dataTableID, "OPUom");
-                    mOperations.Columns.Item("OPCost").DataBind.Bind(dataTableID, "OPCost");
-                    mOperations.Columns.Item("OPTotal").DataBind.Bind(dataTableID, "OPTotal");
-                    mOperations.Columns.Item("OPErrMsg").DataBind.Bind(dataTableID, "OPErrMsg");
+                    BindMatrixColumns(mOperations, dataTableID);
 
-                    // Bind check boxes using UserDataSources
-                    for (int i = 0; i < operationscount; i++)
-                    {
-                        string checkUDSId = $"CheckUDS{i}";
-                        if (!uIAPIRawForm.DataSources.UserDataSources.Cast<SAPbouiCOM.UserDataSource>().Any(uds => uds.UID == checkUDSId))
-                        {
-                            uIAPIRawForm.DataSources.UserDataSources.Add(checkUDSId, BoDataType.dt_SHORT_TEXT, 1);
-                        }
-                        mOperations.Columns.Item("OPcheck").DataBind.SetBound(true, "", checkUDSId);
-
-                    }
+                    // Bind check boxes using UserDataSources to be able to multiselect
+                    BindMatrixCheckboxes(uIAPIRawForm, mOperations, operationscount);
 
                     // Load data from the DataTable to the matrix
                     mOperations.LoadFromDataSource();
 
-                    if (operations.Rows.Count < mOperationsRowIndexMap.Count)
-                    {
-                        for (int j = mOperationsRowIndexMap.Count; j > operations.Rows.Count; j--)
-                        {
-                            mOperations.DeleteRow(j);
-                        }
-                        mOperations.FlushToDataSource();
-                    }
-
                     mOperations.AutoResizeColumns();
-                    SetMatrixRowColor(mOperations, "OPErrMsg");
-                    uIAPIRawForm.Freeze(false);
+
+                    // Color all rows with Error message on the matrix
+                    SetMatrixRowColor(mOperations, operations, "OPErrMsg");
 
                 }
                 catch (Exception ex)
@@ -576,10 +526,9 @@ namespace STXGen2
                 }
                 finally
                 {
+                    uIAPIRawForm.Freeze(false);
                     operationsUpdate = true;
 
-                    mOperations.FlushToDataSource();
-                    
                     uIAPIRawForm.Mode = BoFormMode.fm_UPDATE_MODE;
 
                     Program.SBO_Application.SetStatusBarMessage("Operations matrix updated.", BoMessageTime.bmt_Short, false);
@@ -587,15 +536,50 @@ namespace STXGen2
             }
         }
 
-        private static void SetMatrixRowColor(SAPbouiCOM.Matrix mOperations, string colUID)
+        private static bool DataTableExists(IForm uIAPIRawForm, string dataTableID)
+        {
+            for (int i = 0; i < uIAPIRawForm.DataSources.DataTables.Count; i++)
+            {
+                SAPbouiCOM.DataTable dt = uIAPIRawForm.DataSources.DataTables.Item(i);
+                if (dt.UniqueID == dataTableID)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private static void BindMatrixColumns(Matrix mOperations, string dataTableID)
+        {
+            string[] columnsToBind = new[] { "#", "OPTexture", "OPResc", "OPResN", "OPcode", "OPName", "OPNameL", "OPStdT", "OPQtdT", "OPUom", "OPCost", "OPTotal", "OPErrMsg" };
+
+            foreach (string column in columnsToBind)
+            {
+                mOperations.Columns.Item(column).DataBind.Bind(dataTableID, column);
+
+            }
+        }
+
+        public static void BindMatrixCheckboxes(IForm uIAPIRawForm, Matrix mOperations, int operationscount)
+        {
+            string checkUDSId = $"CheckUDS";
+            if (!uIAPIRawForm.DataSources.UserDataSources.Cast<SAPbouiCOM.UserDataSource>().Any(uds => uds.UID == checkUDSId))
+            {
+                uIAPIRawForm.DataSources.UserDataSources.Add(checkUDSId, BoDataType.dt_SHORT_TEXT, 1);
+            }
+            mOperations.Columns.Item("OPcheck").DataBind.SetBound(true, "", checkUDSId);
+        }
+
+        private static void SetMatrixRowColor(SAPbouiCOM.Matrix mOperations, SAPbouiCOM.DataTable operations, string colUID)
         {
             Color orangeColor = Color.FromArgb(0xFF, 0xD1, 0x55);
             int warning = (orangeColor.R) + (orangeColor.G << 8) + (orangeColor.B << 16);
 
             for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
             {
-                SAPbouiCOM.EditText cell = (SAPbouiCOM.EditText)mOperations.Columns.Item(colUID).Cells.Item(rowIndex).Specific;
-                if (!string.IsNullOrEmpty(cell.Value))
+                string cellValue = operations.GetValue(12, rowIndex - 1).ToString();
+
+                if (!string.IsNullOrEmpty(cellValue))
                 {
                     ((SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific).Checked = true;
                     mOperations.CommonSetting.SetRowBackColor(rowIndex, warning);
@@ -606,7 +590,6 @@ namespace STXGen2
                 }
             }
         }
-
 
         private static void processOperationsList(IForm uIAPIRawForm, List<Dictionary<string, string>> matrix1Values)
         {

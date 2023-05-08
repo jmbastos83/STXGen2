@@ -95,6 +95,8 @@ namespace STXGen2
         private SAPbouiCOM.StaticText StaticText3;
         private SAPbouiCOM.StaticText StaticText4;
 
+        private StaticText lLCPrice;
+
 
 
         public QuoteCalculator()
@@ -112,15 +114,14 @@ namespace STXGen2
             this.QCNElem = ((SAPbouiCOM.EditText)(this.GetItem("QCNElem").Specific));
             this.QCPartName = ((SAPbouiCOM.EditText)(this.GetItem("QCPartN").Specific));
             this.ButtonOk = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
-            //     this.ButtonOk.ClickBefore += new SAPbouiCOM._IButtonEvents_ClickBeforeEventHandler(this.ButtonOk_ClickBefore);
-            this.ButtonOk.ClickAfter += new SAPbouiCOM._IButtonEvents_ClickAfterEventHandler(this.ButtonOk_ClickAfter);
             this.ButtonOk.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.ButtonOk_PressedAfter);
             this.ButtonOk.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.ButtonOk_PressedBefore);
             this.ButtonCancel = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
-            this.ButtonCancel.ClickAfter += new SAPbouiCOM._IButtonEvents_ClickAfterEventHandler(this.ButtonCancel_ClickAfter);
             this.FOperations = ((SAPbouiCOM.Folder)(this.GetItem("FOper").Specific));
+            this.FOperations.ClickAfter += new SAPbouiCOM._IFolderEvents_ClickAfterEventHandler(this.FOperations_ClickAfter);
             this.FOperations.PressedAfter += new SAPbouiCOM._IFolderEvents_PressedAfterEventHandler(this.FOperations_PressedAfter);
             this.FGeneral = ((SAPbouiCOM.Folder)(this.GetItem("FGen").Specific));
+            this.FGeneral.ClickAfter += new SAPbouiCOM._IFolderEvents_ClickAfterEventHandler(this.FGeneral_ClickAfter);
             this.mTextures = ((SAPbouiCOM.Matrix)(this.GetItem("mTextures").Specific));
             this.mTextures.ClickBefore += new SAPbouiCOM._IMatrixEvents_ClickBeforeEventHandler(this.mTextures_ClickBefore);
             this.mTextures.MatrixLoadAfter += new SAPbouiCOM._IMatrixEvents_MatrixLoadAfterEventHandler(this.mTextures_MatrixLoadAfter);
@@ -183,8 +184,8 @@ namespace STXGen2
             this.StaticText5 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_4").Specific));
             this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_5").Specific));
             this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_6").Specific));
-            this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_20").Specific));
-            this.StaticText9 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_21").Specific));
+            this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("lUnPrice").Specific));
+            this.lLCPrice = ((SAPbouiCOM.StaticText)(this.GetItem("lLCPrice").Specific));
             this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("QCObs").Specific));
             this.StaticText10 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_23").Specific));
             this.StaticText11 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_24").Specific));
@@ -204,17 +205,15 @@ namespace STXGen2
             this.Button1.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button1_PressedAfter);
             this.QCPinfo1 = ((SAPbouiCOM.EditText)(this.GetItem("QCPinfo1").Specific));
             this.QCPinfo2 = ((SAPbouiCOM.EditText)(this.GetItem("QCPinfo2").Specific));
-            this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_39").Specific));
-            this.StaticText20 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_40").Specific));
+            this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
+            this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
             this.mOperations.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOperations_ClickAfter);
-            this.mOperations.LostFocusAfter += new SAPbouiCOM._IMatrixEvents_LostFocusAfterEventHandler(this.mOperations_LostFocusAfter);
             this.BtnGetOPC = ((SAPbouiCOM.ButtonCombo)(this.GetItem("btnGetOp").Specific));
             this.BtnGetOPC.PressedAfter += new SAPbouiCOM._IButtonComboEvents_PressedAfterEventHandler(this.BtnGetOPC_PressedAfter);
             this.BtnGetOPC.ComboSelectAfter += new SAPbouiCOM._IButtonComboEvents_ComboSelectAfterEventHandler(this.BtnGetOPC_ComboSelectAfter);
-            //                 this.btnGetOP = ((SAPbouiCOM.Button)(this.GetItem("btnGetOP").Specific));
-            //                 this.btnGetOP.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.btnGetOP_PressedAfter);
-            //                 this.btnGetOP.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.btnGetOP_PressedBefore);
+            this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("OpRem").Specific));
+            this.Button0.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button0_PressedAfter);
             this.OnCustomInitialize();
 
         }
@@ -251,6 +250,8 @@ namespace STXGen2
                 QCDocEntry.Item.Enabled = true;
 
                 QCDocEntry.Value = qcid;
+
+                QCEvents.BindMatrixCheckboxes(this.UIAPIRawForm, mOperations, mOperations.RowCount);
 
                 ButtonOk.Item.Click();
 
@@ -311,7 +312,8 @@ namespace STXGen2
                     LCCurr.Value = Utils.MainCurrency;
                     this.LCPrice.Item.Visible = true;
                     this.LCCurr.Item.Visible = true;
-                }
+                    this.lLCPrice.Item.Visible = true;
+    }
 
                 currentPrice = this.UnPrice.Value;
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
@@ -327,6 +329,8 @@ namespace STXGen2
                     SAPbouiCOM.EditText newAutoRow = (SAPbouiCOM.EditText)mOperations.Columns.Item("#").Cells.Item(1).Specific;
                     newAutoRow.Value = "1";
                 }
+
+                
 
             }
             catch (Exception ex)
@@ -359,55 +363,7 @@ namespace STXGen2
         }
 
 
-        private void Form_ResizeAfter(SBOItemEventArg pVal)
-        {
-
-            Item tabControlItem = this.UIAPIRawForm.Items.Item("Item_9");
-            Item docEntryItem = this.UIAPIRawForm.Items.Item("QCDocEntry");
-            Item matrix1Item = this.UIAPIRawForm.Items.Item("mTextures");
-            Item matrix2Item = this.UIAPIRawForm.Items.Item("mOCosts");
-
-            Item buttonOKItem = this.UIAPIRawForm.Items.Item("1");
-            Item buttonCancelItem = this.UIAPIRawForm.Items.Item("2");
-
-            int formWidth = this.UIAPIRawForm.ClientWidth;
-            int availableWidth = tabControlItem.Width - matrix1Item.Left - 5;
-
-            int minHeight = matrix2Item.Top + 20;
-            TabControl tabControl = (TabControl)tabControlItem.Specific;
-
-            // Set a fixed height for 5 rows (assuming a row height of 21 pixels)
-            int fixedMatrixHeight = 21 * 5;
-
-            docEntryItem.Left = formWidth - docEntryItem.Width - 5;
-
-            matrix1Item.Width = tabControlItem.Width - 20;
-            matrix1Item.Height = fixedMatrixHeight;
-
-
-            QCPinfo1.Item.Top = matrix1Item.Top + matrix1Item.Height + 10;
-            //QCPinfo1.Item.Left = matrix1Item.Left;
-            QCPinfo1.Item.Width = availableWidth / 2;
-
-            QCPinfo2.Item.Top = QCPinfo1.Item.Top + QCPinfo1.Item.Height + 5;
-            QCPinfo2.Item.Width = availableWidth / 2;
-
-            matrix2Item.Top = QCPinfo2.Item.Top + QCPinfo2.Item.Height + 10;  //matrix1Item.Top + matrix1Item.Height + 20; // Add an additional space between the matrices
-            matrix2Item.Width = availableWidth / 2;
-            matrix2Item.Height = fixedMatrixHeight;
-
-            //Resize the tab control while maintaining the minimum width and height
-            tabControlItem.Width = this.UIAPIRawForm.ClientWidth - tabControlItem.Left - 5;
-            tabControlItem.Height = minHeight;
-
-            buttonOKItem.Top = this.UIAPIRawForm.ClientHeight - 30;
-            buttonCancelItem.Top = this.UIAPIRawForm.ClientHeight - 30;
-
-            mTextures.AutoResizeColumns();
-            mOCosts.AutoResizeColumns();
-            mOperations.AutoResizeColumns();
-
-        }
+        
 
 
         private void mTextures_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
@@ -551,7 +507,7 @@ namespace STXGen2
         {
             if (currentPrice != this.UnPrice.Value)
             {
-                double newPrice = double.Parse(this.UnPrice.Value);
+                double newPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(this.UnPrice.Value) ? "0" : this.UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
                 UnPrice.Value = $"{newPrice.ToString("0.00")} {this.QCDocCur.Value}";
 
                 if (Utils.MainCurrency != this.QCDocCur.Value)
@@ -638,7 +594,7 @@ namespace STXGen2
         private StaticText StaticText6;
         private StaticText StaticText7;
         private StaticText StaticText8;
-        private StaticText StaticText9;
+        
         private EditText EditText0;
         private StaticText StaticText10;
         private StaticText StaticText11;
@@ -745,8 +701,8 @@ namespace STXGen2
 
         private EditText QCPinfo1;
         private EditText QCPinfo2;
-        private StaticText StaticText19;
-        private StaticText StaticText20;
+        private StaticText lPinfo1;
+        private StaticText lPinfo2;
         private string sapToolsFolder;
         private string newImageFilename;
         private bool isChooseFromListTriggered;
@@ -961,48 +917,6 @@ namespace STXGen2
             }
         }
 
-        private void mOperations_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            //if (pVal.ColUID == "OPQtdT")
-            //{
-            //    this.UIAPIRawForm.Freeze(true);
-            //    mOperations.FlushToDataSource();
-            //    mOperations.LoadFromDataSource();
-            //    this.UIAPIRawForm.Freeze(false);
-            //    this.UIAPIRawForm.Refresh();
-            //}
-
-        }
-
-        private void ButtonCancel_ClickAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            //selectedMatrixRow = 0;
-            //QCEvents.operationsUpdate = false;
-            //if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
-            //{
-            //    DBCalls.UpdateOperationsDB(QCEvents.operations, this.QCDocEntry);
-            //}
-
-        }
-
-        private void ButtonOk_ClickAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            
-            //if (this.UIAPIRawForm.Mode == SAPbouiCOM.BoFormMode.fm_OK_MODE && QCEvents.operationsUpdate == true)
-            //{
-                
-            //    QCEvents.operationsUpdate = false;
-            //    SAPbouiCOM.DataTable mOperations = QCEvents.operations;
-            //    string qCDocEntry = this.QCDocEntry.Value;
-
-            //    // Convert the SAPbouiCOM.DataTable to a .NET DataTable object
-            //    System.Data.DataTable mOperationsConverted = ConvertToDataTable(mOperations);
-
-            //    Thread updateThread = new Thread(() => DBCalls.UpdateOperationsDB(mOperationsConverted, qCDocEntry));
-            //    updateThread.Start();
-            //}
-        }
-        
         private void mOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
             SAPEvents.lastClickedMatrixUID = pVal.ItemUID;
@@ -1029,8 +943,6 @@ namespace STXGen2
           
             if (pVal.FormMode != 2 && QCEvents.operationsUpdate == true)
             {
-
-                QCEvents.operationsUpdate = false;
                 SAPbouiCOM.DataTable mOperations = QCEvents.operations;
                 string qCDocEntry = this.QCDocEntry.Value;
 
@@ -1041,6 +953,7 @@ namespace STXGen2
                 updateThread.Start();
 
             }
+            QCEvents.operationsUpdate = false;
         }
 
         private System.Data.DataTable ConvertToDataTable(SAPbouiCOM.DataTable sapDataTable)
@@ -1061,7 +974,6 @@ namespace STXGen2
                 }
                 dt.Rows.Add(newRow);
             }
-
             return dt;
         }
 
@@ -1072,6 +984,153 @@ namespace STXGen2
 
         }
 
-             
+        private SAPbouiCOM.Button Button0;
+
+        private void FOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            resizeOperationsFormUI();
+
+        }
+        private void FGeneral_ClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            resizeTextureFormUI();
+
+        }
+
+
+        #region Form Scale Resize
+
+        private void Form_ResizeAfter(SBOItemEventArg pVal)
+        {
+
+            Item tabControlItem = this.UIAPIRawForm.Items.Item("Item_9");
+            Item docEntryItem = this.UIAPIRawForm.Items.Item("QCDocEntry");
+
+            Folder operationsFolder = (Folder)this.UIAPIRawForm.Items.Item("FOper").Specific;
+            Folder texturesFolder = (Folder)this.UIAPIRawForm.Items.Item("FGen").Specific;
+
+            Item buttonOKItem = this.UIAPIRawForm.Items.Item("1");
+            Item buttonCancelItem = this.UIAPIRawForm.Items.Item("2");
+
+            //Resize the tab control while maintaining the minimum width and height
+            tabControlItem.Width = this.UIAPIRawForm.ClientWidth - tabControlItem.Left - 5;
+            if (texturesFolder.Selected)
+            {
+                resizeTextureFormUI();
+                
+            }
+            else if (operationsFolder.Selected)
+            {
+                resizeOperationsFormUI();
+            }
+
+            buttonOKItem.Top = this.UIAPIRawForm.ClientHeight - 30;
+            buttonCancelItem.Top = this.UIAPIRawForm.ClientHeight - 30;
+
+
+            mOperations.AutoResizeColumns();
+            mTextures.AutoResizeColumns();
+            mOCosts.AutoResizeColumns();
+            
+
+        }
+
+        private void resizeTextureFormUI()
+        {
+            this.UIAPIRawForm.Freeze(true);
+            Item tabControlItem = this.UIAPIRawForm.Items.Item("Item_9");
+            Item matrix1Item = this.UIAPIRawForm.Items.Item("mTextures");
+            Item matrix2Item = this.UIAPIRawForm.Items.Item("mOCosts");
+
+            int availableWidth = tabControlItem.Width - matrix1Item.Left - 5;
+
+            int minHeight = matrix2Item.Top + 20;
+
+            tabControlItem.Height = minHeight;
+
+            // Set a fixed height for 5 rows (assuming a row height of 21 pixels)
+            int fixedMatrixHeight = 21 * 5;
+
+            matrix1Item.Width = tabControlItem.Width - 20;
+            matrix1Item.Height = fixedMatrixHeight;
+
+            QCPinfo1.Item.Top = matrix1Item.Top + matrix1Item.Height + 10;
+            QCPinfo1.Item.Width = availableWidth / 2;
+            lPinfo1.Item.Top = matrix1Item.Top + matrix1Item.Height + 27;
+
+            QCPinfo2.Item.Top = QCPinfo1.Item.Top + QCPinfo1.Item.Height + 5;
+            QCPinfo2.Item.Width = availableWidth / 2;
+            lPinfo2.Item.Top = QCPinfo1.Item.Top + QCPinfo1.Item.Height + 22;
+
+            matrix2Item.Top = QCPinfo2.Item.Top + QCPinfo2.Item.Height + 10;  //matrix1Item.Top + matrix1Item.Height + 20; // Add an additional space between the matrices
+            matrix2Item.Width = availableWidth / 2;
+            matrix2Item.Height = fixedMatrixHeight;
+            this.UIAPIRawForm.Freeze(false);
+        }
+
+        private void resizeOperationsFormUI()
+        {
+            this.UIAPIRawForm.Freeze(true);
+            Item tabControlItem = this.UIAPIRawForm.Items.Item("Item_9");
+            Item matrix1Item = this.UIAPIRawForm.Items.Item("mOper");
+            Item remarkBoxItem = this.UIAPIRawForm.Items.Item("QCObs");
+            Item remOperationsBtn = this.UIAPIRawForm.Items.Item("OpRem");
+
+            // Resize the tab control while maintaining the minimum width and height
+            tabControlItem.Width = this.UIAPIRawForm.ClientWidth - tabControlItem.Left - 5;
+
+            int remarkBoxHeight = remarkBoxItem.Height;
+
+            int availableHeight = this.UIAPIRawForm.ClientHeight - tabControlItem.Top - remarkBoxHeight;
+            tabControlItem.Height = (int)(availableHeight * 0.90);
+
+            // Get tab control dimensions
+            int tabControlWidth = tabControlItem.Width;
+            int tabControlHeight = tabControlItem.Height;
+
+            // Set the matrix width and height based on the tab control dimensions
+            matrix1Item.Width = tabControlWidth - 15; // Adjust the value as needed to fit within the tab control
+            matrix1Item.Height = tabControlHeight - 80;
+
+            // Calculate the top position of the matrix inside the tab control
+            int matrixTopPosition = matrix1Item.Top - tabControlItem.Top;
+            int matrixHeight = matrix1Item.Height;
+                 
+            // Calculate the new top position for the OpRem button based on the matrix height and desired spacing
+            remOperationsBtn.Top = tabControlItem.Top + tabControlHeight - 25;
+
+            this.UIAPIRawForm.Freeze(false);
+        }
+
+        #endregion
+
+        private void Button0_PressedAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            RemoveCheckedRowsFromMatrix(mOperations);
+        }
+
+        private void RemoveCheckedRowsFromMatrix(Matrix mOperations)
+        {
+            this.UIAPIRawForm.Freeze(true);
+
+            // Iterate through the rows in reverse order
+            for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
+            {
+                // Get the value of the "OPcheck" column for the current row
+                SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
+
+                // Check if the checkbox is checked
+                if (checkBox.Checked)
+                {
+                    // Remove the row from the matrix
+                    mOperations.DeleteRow(rowIndex);
+                    mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                }
+            }
+            // Synchronize the matrix data with the data source
+            mOperations.FlushToDataSource();
+
+            this.UIAPIRawForm.Freeze(false);
+        }
     }
 }

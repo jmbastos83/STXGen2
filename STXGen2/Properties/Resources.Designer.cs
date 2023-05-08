@@ -70,6 +70,42 @@ namespace STXGen2.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Recurso inativo ou não existente..
+        /// </summary>
+        internal static string mOperErr1 {
+            get {
+                return ResourceManager.GetString("mOperErr1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Operação inexistente. Por favor contactar equipa SAP..
+        /// </summary>
+        internal static string mOperErr2 {
+            get {
+                return ResourceManager.GetString("mOperErr2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Área a texturizar em falta..
+        /// </summary>
+        internal static string mOperErr3 {
+            get {
+                return ResourceManager.GetString("mOperErr3", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Recurso selecionado não tem custo associado. Contactar departamento Financeiro..
+        /// </summary>
+        internal static string mOperErr4 {
+            get {
+                return ResourceManager.GetString("mOperErr4", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Ola Mundo.
         /// </summary>
         internal static string Msg1 {

@@ -120,6 +120,19 @@
   <data name="ItemCodeLabel" xml:space="preserve">
     <value>ItemCode</value>
   </data>
+  <data name="mOperErr1" xml:space="preserve">
+    <value>Recurso inativo ou não existente.</value>
+    <comment> </comment>
+  </data>
+  <data name="mOperErr2" xml:space="preserve">
+    <value>Operação inexistente. Por favor contactar equipa SAP.</value>
+  </data>
+  <data name="mOperErr3" xml:space="preserve">
+    <value>Área a texturizar em falta.</value>
+  </data>
+  <data name="mOperErr4" xml:space="preserve">
+    <value>Recurso selecionado não tem custo associado. Contactar departamento Financeiro.</value>
+  </data>
   <data name="Msg1" xml:space="preserve">
     <value>Ola Mundo</value>
   </data>
