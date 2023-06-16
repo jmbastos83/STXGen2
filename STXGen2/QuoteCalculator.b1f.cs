@@ -110,6 +110,41 @@ namespace STXGen2
         private StaticText StaticText9;
         private EditText EditText4;
 
+        private StaticText StaticText5;
+        private StaticText StaticText6;
+        private StaticText StaticText7;
+        private StaticText StaticText8;
+
+        private EditText EditText0;
+        private StaticText StaticText10;
+        private StaticText StaticText11;
+        private StaticText StaticText12;
+        private StaticText StaticText13;
+        private StaticText StaticText15;
+        private StaticText StaticText16;
+        private StaticText StaticText17;
+        private StaticText StaticText18;
+        private SAPbouiCOM.PictureBox PictureBox0;
+        private SAPbouiCOM.PictureBox ToolImg;
+        private SAPbouiCOM.Button PicBrowse;
+        private SAPbouiCOM.Button Button1;
+
+        private EditText QCOpA;
+        private EditText QCOPTot;
+        private EditText QCOTCost;
+        private EditText QCTotalHF;
+        private EditText QCTotalH;
+        private EditText QCTotalSCF;
+        private EditText QCTEst;
+        private EditText QCTotalSC;
+        private EditText EditText12;
+        private EditText EditText13;
+        private EditText EditText14;
+        private UserDataSource oUserDataSource;
+        private bool lostFocusQCLength = false;
+        private bool lostFocusQCWidth = false;
+        private bool lostFocusQCHeight = false;
+
 
 
         public QuoteCalculator()
@@ -176,14 +211,14 @@ namespace STXGen2
             this.QCDocEntry = ((SAPbouiCOM.EditText)(this.GetItem("QCDocEntry").Specific));
             this.QCItemCode = ((SAPbouiCOM.EditText)(this.GetItem("QCItemCode").Specific));
             this.QCItemName = ((SAPbouiCOM.EditText)(this.GetItem("QCItemN").Specific));
-            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("QCOpA").Specific));
-            this.EditText2 = ((SAPbouiCOM.EditText)(this.GetItem("Item_8").Specific));
-            this.EditText5 = ((SAPbouiCOM.EditText)(this.GetItem("Item_10").Specific));
-            this.EditText6 = ((SAPbouiCOM.EditText)(this.GetItem("Item_11").Specific));
-            this.EditText7 = ((SAPbouiCOM.EditText)(this.GetItem("Item_12").Specific));
-            this.EditText8 = ((SAPbouiCOM.EditText)(this.GetItem("Item_13").Specific));
-            this.EditText9 = ((SAPbouiCOM.EditText)(this.GetItem("Item_14").Specific));
-            this.EditText10 = ((SAPbouiCOM.EditText)(this.GetItem("Item_15").Specific));
+            this.QCOpA = ((SAPbouiCOM.EditText)(this.GetItem("QCOpA").Specific));
+            this.QCOPTot = ((SAPbouiCOM.EditText)(this.GetItem("QCOPTot").Specific));
+            this.QCOTCost = ((SAPbouiCOM.EditText)(this.GetItem("QCOTCost").Specific));
+            this.QCTEst = ((SAPbouiCOM.EditText)(this.GetItem("QCTEst").Specific));
+            this.QCTotalHF = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalHF").Specific));
+            this.QCTotalH = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalH").Specific));
+            this.QCTotalSCF = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalSCF").Specific));
+            this.QCTotalSC = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalSC").Specific));
             this.EditText12 = ((SAPbouiCOM.EditText)(this.GetItem("Item_17").Specific));
             this.EditText13 = ((SAPbouiCOM.EditText)(this.GetItem("Item_18").Specific));
             this.EditText14 = ((SAPbouiCOM.EditText)(this.GetItem("Item_19").Specific));
@@ -221,12 +256,21 @@ namespace STXGen2
             this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
             this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
+            this.mOperations.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mOperations_ChooseFromListAfter);
+            this.mOperations.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.mOperations_GotFocusAfter);
+            this.mOperations.LostFocusAfter += new SAPbouiCOM._IMatrixEvents_LostFocusAfterEventHandler(this.mOperations_LostFocusAfter);
             this.mOperations.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOperations_ClickAfter);
             this.BtnGetOPC = ((SAPbouiCOM.ButtonCombo)(this.GetItem("btnGetOp").Specific));
             this.BtnGetOPC.PressedAfter += new SAPbouiCOM._IButtonComboEvents_PressedAfterEventHandler(this.BtnGetOPC_PressedAfter);
             this.BtnGetOPC.ComboSelectAfter += new SAPbouiCOM._IButtonComboEvents_ComboSelectAfterEventHandler(this.BtnGetOPC_ComboSelectAfter);
             this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("OpRem").Specific));
             this.Button0.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button0_PressedAfter);
+            this.DefBOM = ((SAPbouiCOM.CheckBox)(this.GetItem("DefBOM").Specific));
+            this.OPFilter = ((SAPbouiCOM.ComboBox)(this.GetItem("OPFilter").Specific));
+            this.EditText15 = ((SAPbouiCOM.EditText)(this.GetItem("QCWOrder").Specific));
+            this.LinkedButton2 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_21").Specific));
+            this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
+            this.EditText16 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
             this.OnCustomInitialize();
 
         }
@@ -512,21 +556,7 @@ namespace STXGen2
             }
         }
 
-        private EditText EditText1;
-        private EditText EditText2;
-        private EditText EditText5;
-        private EditText EditText6;
-        private EditText EditText7;
-        private EditText EditText8;
-        private EditText QCTEst;
-        private EditText EditText10;
-        private EditText EditText12;
-        private EditText EditText13;
-        private EditText EditText14;
-        private UserDataSource oUserDataSource;
-        private bool lostFocusQCLength = false;
-        private bool lostFocusQCWidth = false;
-        private bool lostFocusQCHeight = false;
+
 
 
         private void UnPrice_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
@@ -635,24 +665,6 @@ namespace STXGen2
 
         }
 
-        private StaticText StaticText5;
-        private StaticText StaticText6;
-        private StaticText StaticText7;
-        private StaticText StaticText8;
-
-        private EditText EditText0;
-        private StaticText StaticText10;
-        private StaticText StaticText11;
-        private StaticText StaticText12;
-        private StaticText StaticText13;
-        private StaticText StaticText15;
-        private StaticText StaticText16;
-        private StaticText StaticText17;
-        private StaticText StaticText18;
-        private SAPbouiCOM.PictureBox PictureBox0;
-        private SAPbouiCOM.PictureBox ToolImg;
-        private SAPbouiCOM.Button PicBrowse;
-        private SAPbouiCOM.Button Button1;
 
         private async void PicBrowse_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -1524,9 +1536,7 @@ namespace STXGen2
             }
         }
 
-        private Matrix Matrix0;
-
-        private void Matrix0_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
+        private void mOperations_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
             if (pVal.ItemUID == "mOper")
             {
@@ -1539,14 +1549,14 @@ namespace STXGen2
 
         }
 
-        private Matrix Matrix1;
-        private ButtonCombo ButtonCombo0;
-        private SAPbouiCOM.Button Button2;
-        private SAPbouiCOM.CheckBox CheckBox0;
-        private SAPbouiCOM.ComboBox ComboBox0;
-        private EditText EditText9;
-        private LinkedButton LinkedButton1;
-        private StaticText StaticText14;
-        private EditText EditText11;
+
+        private EditText EditText15;
+        private LinkedButton LinkedButton2;
+        private StaticText StaticText19;
+        private EditText EditText16;
+
+       
+
+
     }
 }
