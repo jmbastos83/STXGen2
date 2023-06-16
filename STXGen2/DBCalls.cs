@@ -16,6 +16,28 @@ namespace STXGen2
         public string Quantity { get; set; }
         public string GeoComplex { get; set; }
 
+
+
+        internal static void GetFilterOperations(SAPbouiCOM.ComboBox comboBox, SAPbouiCOM.EditText qCDocEntry)
+        {
+            string query = "select - 1 as \"Code\", 'All Tasks' as \"Description\"\n" +
+                          "union all\n" +
+                          "select distinct \"U_seq\" as \"Code\", Case when \"U_seq\" = 0 then 'Initial Tasks' when U_seq = 99 then 'Final Tasks' else concat('Texture: ', \"U_Texture\") end as \"Description\" from \"@STXQC19O\" where \"DocEntry\" = {0}";
+            query = string.Format(query, qCDocEntry.Value);
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(query);
+
+            while (!rs.EoF)
+            {
+                string value = rs.Fields.Item("Code").Value.ToString();
+                string descr = rs.Fields.Item("Description").Value.ToString();
+                comboBox.ValidValues.Add(value, descr);
+                rs.MoveNext();
+            }
+        }
+
+
+
         internal static string GetUserLanguage()
         {
             string sSql = $"SELECT \"Language\" FROM OUSR WHERE \"USER_CODE\" = '" + Utils.oCompany.UserName + "'";
@@ -95,7 +117,7 @@ namespace STXGen2
             return maxLineID;
         }
 
-        internal static void GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode)
+        internal static void GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM)
         {
 
 
@@ -103,11 +125,12 @@ namespace STXGen2
                            "X0.\"U_STXOPDes\" as \"OPName\",X0.\"U_STXOPDesLocal\" as \"OPNameL\",cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5})) as \"OPStdT\",\n" +
                            "cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5})) as \"OPQtdT\",X0.\"UnitOfMsr\" as \"OPUom\",cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6})) as \"OPCost\",\n" +
                            "cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6})) as \"OPTotal\",\n" +
-                           "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"OPErrMsg\",'' as \"Dummy\" from(\n" +
+                           "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"OPErrMsg\",\n" +
+                           "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"OPSeq\",'' as \"Dummy\" from(\n" +
                            "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
                            "R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",sum(R0.\"Quantity\") as \"Quantity\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",{3},R1.\"ResCost\",R1.\"UnitOfMsr\",sum(R0.\"NTimes\") as \"NTimes\"\n" +
                            "from(\n" +
-                           "select  1 as \"Order\", T2.\"U_groupOrder\", T2.\"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                           "select  1 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\" , T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
                            "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
                            "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
                            "from OITT T0\n" +
@@ -118,7 +141,7 @@ namespace STXGen2
 
                            "union all\n" +
 
-                           "select  2 as \"Order\", T2.\"U_groupOrder\", T2.\"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                           "select  2 as \"Order\", T2.\"U_groupOrder\",Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
                            "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
                            "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
                            "from OITT T0\n" +
@@ -129,7 +152,7 @@ namespace STXGen2
 
                            "union all\n" +
 
-                           "select  3 as \"Order\", T2.\"U_groupOrder\", T2.\"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                           "select  3 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
                            "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
                            "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
                            "from OITT T0\n" +
@@ -141,7 +164,7 @@ namespace STXGen2
                            "group by R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END,R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\", R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",R1.\"ResCost\",R1.\"UnitOfMsr\") X0, OADM X1\n" +
                            "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
 
-            query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4);
+            query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM);
 
 
 
@@ -257,13 +280,18 @@ namespace STXGen2
                     oGeneralData = oGeneralService.GetByParams(oGeneralParams);
 
                     oChildren = oGeneralData.Child("STXQC19O");
-                    try
+
+                    // Check if the child at index i exists
+                    if (i < oChildren.Count)
                     {
+                        // If it exists, retrieve it
                         oChild = oChildren.Item(i);
                     }
-                    catch (Exception)
+                    else
                     {
-                        oChild = oChildren.Add();
+                        // If it doesn't exist, add a new child and then retrieve it
+                        oChildren.Add();
+                        oChild = oChildren.Item(oChildren.Count - 1);
                     }
 
                     oChild.SetProperty("U_Texture", mOperations.Rows[i]["OPTexture"]);
@@ -278,6 +306,7 @@ namespace STXGen2
                     oChild.SetProperty("U_Price", mOperations.Rows[i]["OPCost"]);
                     oChild.SetProperty("U_LineTot", mOperations.Rows[i]["OPTotal"]);
                     oChild.SetProperty("U_ErrMsg", mOperations.Rows[i]["OPErrMsg"]);
+                    oChild.SetProperty("U_seq", mOperations.Rows[i]["OPSeq"]);
 
                     //Update the UDO Record                
                     oGeneralService.Update(oGeneralData);   // If Child Table does not have any record, it will create; else, update the existing one
@@ -288,7 +317,57 @@ namespace STXGen2
                     Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, true);
                 }
             }
+            for (int j = oChildren.Count - 1; j >= mOperations.Rows.Count; j--)
+            {
+                oChildren.Remove(j);
+                oGeneralService.Update(oGeneralData);
+            }
             //Program.SBO_Application.SetStatusBarMessage("Operations imported sucessfully.", BoMessageTime.bmt_Medium, false);
+        }
+
+        internal static (string,string) GetSPT(SAPbouiCOM.EditText qCSubPart)
+        {
+            string spt = "";
+            string descr = "";
+
+            string sSql = $"SELECT T0.\"ItemCode\", T0.\"ItemName\" as \"Part Name\" FROM OITM T0 WHERE T0.\"ItemCode\" ='{qCSubPart.Value}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                descr = (string)rs.Fields.Item("Part Name").Value;
+            }
+
+            descr = descr + ": ";
+
+            string newQCSubPart = qCSubPart.String.Substring(0, qCSubPart.String.Length - 2) + "00";
+            string sSql2 = $"SELECT T0.\"ItemCode\", T0.\"ItemName\" as \"Part Name\" FROM OITM T0 WHERE T0.\"ItemCode\" like '{newQCSubPart}'";
+
+            Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs2.DoQuery(sSql2);
+
+            if (!rs2.EoF)
+            {
+                spt = (string)rs2.Fields.Item("ItemCode").Value;
+                descr = descr + (string)rs2.Fields.Item("Part Name").Value;
+            }
+            return (spt,descr);
+        }
+
+        internal static string ResCost(string resCode)
+        {
+            string cost = "";
+            string sSql = $"select \"ResCode\",\"ResName\",\"UnitOfMsr\",(\"StdCost1\"+\"StdCost2\"+\"StdCost3\"+\"StdCost4\"+\"StdCost5\"+\"StdCost6\"+\"StdCost7\"+\"StdCost8\"+\"StdCost9\"+\"StdCost10\") as \"ResCost\" from ORSC WHERE \"ResCode\" ='{resCode}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                double resCost = (double)rs.Fields.Item("ResCost").Value;
+                cost = resCost.ToString(CultureInfo.InvariantCulture);
+            }
+            return cost;
         }
     }
 }

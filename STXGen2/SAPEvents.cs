@@ -21,6 +21,7 @@ namespace STXGen2
         public static string mLinenum { get; private set; }
         public static string qcid { get; private set; }
         public static string lastClickedMatrixUID { get; set; }
+        public static int selectedRow { get; private set; }
 
         internal static void SBO_Application_RightClickEvent(ref ContextMenuInfo eventInfo, out bool BubbleEvent)
         {
@@ -33,6 +34,7 @@ namespace STXGen2
                 SAPbouiCOM.Menus oMenus = null;
                 if ((oForm.TypeEx == "149" || oForm.TypeEx == "139" || oForm.TypeEx == "140" || oForm.TypeEx == "133" || oForm.TypeEx == "179") && eventInfo.BeforeAction == true && eventInfo.ItemUID == "38")
                 {
+                    selectedRow = eventInfo.Row;
                     if (oForm.Mode == BoFormMode.fm_UPDATE_MODE || oForm.Mode == BoFormMode.fm_OK_MODE)
                     {
                         try
@@ -109,7 +111,7 @@ namespace STXGen2
             if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc") // Sales Quotation form.
             {
                     Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific; // The item matrix in the Sales Quotation form.
-                    int selectedRow = itemMatrix.GetNextSelectedRow();
+                    //selectedRow = itemMatrix.GetNextSelectedRow();
 
                     if (selectedRow > -1)
                     {

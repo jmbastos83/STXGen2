@@ -18,9 +18,8 @@ namespace STXGen2
 {
     internal class QCEvents
     {
-
+        public static HashSet<int> deletedRows = new HashSet<int>();
         public readonly object MatrixLock = new object();
-        public static SAPbouiCOM.DataTable operations;
         public static bool _processChooseFromList = false;
         public static Dictionary<int, string> _pendingCFLUpdates = new Dictionary<int, string>();
 
@@ -28,6 +27,7 @@ namespace STXGen2
         public static object QCLength { get; private set; }
         public static int processOperationsListErr { get; private set; } = 0;
         public static bool operationsUpdate { get; set; } = false;
+        public static SAPbouiCOM.DataTable operations { get; set; }
 
 
         public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedMatrixRow)
@@ -41,7 +41,7 @@ namespace STXGen2
 
             if (texturesMatrix.RowCount == 5)
             {
-                Program.SBO_Application.SetStatusBarMessage("Maximum number of textures reached.",BoMessageTime.bmt_Medium,false);
+                Program.SBO_Application.SetStatusBarMessage("Maximum number of textures reached.", BoMessageTime.bmt_Medium, false);
                 return;
             }
             if (texturesMatrix.RowCount == 0 || selectedRow == texturesMatrix.RowCount)
@@ -121,7 +121,7 @@ namespace STXGen2
                     texturesMatrix.FlushToDataSource();
 
 
-                    
+
                     for (int rowIndex = 0; rowIndex < rowsData.Count; rowIndex++)
                     {
 
@@ -267,33 +267,78 @@ namespace STXGen2
 
         internal static string CalculateArea(string formUID, string selectedUoM)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
             SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(formUID);
             EditText edtQCLength = (EditText)oForm.Items.Item("QCLength").Specific;
             EditText edtQCWidth = (EditText)oForm.Items.Item("QCWidth").Specific;
             EditText edtQCArea = (EditText)oForm.Items.Item("QCArea").Specific;
 
-            float length = float.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCLength.Value) ? "0" : edtQCLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
-            float width = float.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCWidth.Value) ? "0" : edtQCWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
+            double length = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCLength.Value) ? "0" : edtQCLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+            double width = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCWidth.Value) ? "0" : edtQCWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
 
-
-            float area = length * width;
-            edtQCArea.Value = (area.ToString() + " " + selectedUoM + "²");
+            double area = length * width;
+            string areaFormatted = area.ToString("N", sapNumberFormat);
+            edtQCArea.Value = $"{areaFormatted} {selectedUoM}²";
 
             return edtQCArea.Value;
         }
 
-        internal static string LoadImageFromResources()
+        internal static string SellMarginImage(IForm uIAPIRawForm)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
+            double compPrice = 0;
+            double compCost = 0;
+            string DocCur = ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCDocCur").Specific).Value;
+            string Cost = ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTEst").Specific).Value;
+            string Price = ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("UnPrice").Specific).Value;
+            string LCPrice = ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("LCPrice").Specific).Value;
+
+            if (Utils.MainCurrency != DocCur)
+            {
+                compPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(LCPrice) ? "0" : LCPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+
+            }
+            else
+            {
+                compPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(Price) ? "0" : Price), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+            }
+
+            compCost = double.Parse(Cost, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+
             string imagePath = "";
+            string imageName = "";
+
             Assembly assembly = Assembly.GetExecutingAssembly();
-            string resourceName = "STXGen2.Properties.Light-green.jpg";
+            string resourceName = "";
+            string prefix = "STXGen2.Properties.";
+
+
+            // Your condition to choose the image
+            if (compCost < compPrice)
+            {
+                resourceName = "Light-green.jpg";
+            }
+            else if (compCost == compPrice)
+            {
+                resourceName = "Light-yellow.jpg";
+            }
+            else
+            {
+                resourceName = "Light-red.jpg";
+            }
+
+            imageName = resourceName;
+            resourceName = prefix + resourceName;
 
             using (Stream stream = assembly.GetManifestResourceStream(resourceName))
             {
                 if (stream != null)
                 {
+
                     Image image = Image.FromStream(stream);
-                    imagePath = Path.GetTempPath() + "Light-green.jpg";
+                    imagePath = Path.GetTempPath() + imageName;
                     image.Save(imagePath);
                 }
             }
@@ -343,6 +388,7 @@ namespace STXGen2
 
         internal static void RemoveLinefromOperationMatrix(SAPbouiCOM.Form oForm, Matrix OperationsMatrix, int selectedMatrixRow)
         {
+            SAPbouiCOM.ComboBox OPFilter = (SAPbouiCOM.ComboBox)oForm.Items.Item("OPFilter").Specific;
             if (QuoteCalculator.selectedMatrixRow > 0)
             {
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
@@ -365,6 +411,9 @@ namespace STXGen2
                 // Set the selection mode back to the default after loading the data source.
                 OperationsMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
             }
+            QCEvents.OperationsTotal(oForm);
+            QCEvents.OperationsTotalFilter(oForm, OPFilter.Selected.Value);
+            QCEvents.OperationsTotalCosts(oForm);
         }
 
         internal static void RemoveLinefromTexturesMatrix(SAPbouiCOM.Form oForm, Matrix texturesMatrix, int selectedMatrixRow)
@@ -391,6 +440,93 @@ namespace STXGen2
                 // Set the selection mode back to the default after loading the data source.
                 texturesMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
             }
+        }
+
+        internal static void GetSubPartType(IForm uIAPIRawForm, SAPbouiCOM.EditText qCSubPart)
+        {
+            uIAPIRawForm.Freeze(true);
+            string spt = "";
+            string descr = "";
+            SAPbouiCOM.Form oForm = ((SAPbouiCOM.Form)uIAPIRawForm);
+            SAPbouiCOM.EditText SubPartType = (SAPbouiCOM.EditText)oForm.Items.Item("QCPartType").Specific;
+            SAPbouiCOM.EditText PartDescr = (SAPbouiCOM.EditText)oForm.Items.Item("SPartDescr").Specific;
+
+
+            string checkUDSId = $"CheckSPT";
+            if (!uIAPIRawForm.DataSources.UserDataSources.Cast<SAPbouiCOM.UserDataSource>().Any(uds => uds.UID == checkUDSId))
+            {
+                uIAPIRawForm.DataSources.UserDataSources.Add(checkUDSId, BoDataType.dt_SHORT_TEXT, 100);
+            }
+
+            // Get the user data source
+            SAPbouiCOM.UserDataSource oDS = oForm.DataSources.UserDataSources.Item(checkUDSId);
+
+            // Bind the SubPartType field to the user data source
+            SubPartType.DataBind.SetBound(true, "", checkUDSId);
+
+            (spt, descr) = DBCalls.GetSPT(qCSubPart);
+
+            // Update the value via the user data source
+            oDS.Value = spt;
+            PartDescr.Value = descr;
+
+            uIAPIRawForm.Freeze(false);
+        }
+
+        internal static void OperationsTotalSubCFilter(IForm uIAPIRawForm, string selectedValue)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double total = 0;
+
+            SAPbouiCOM.Matrix mOperations = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
+
+            if (selectedValue != "-1")
+            {
+                for (int i = 1; i <= mOperations.RowCount; i++)
+                {
+                    if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPSeq").Cells.Item(i).Specific).Value == selectedValue && ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
+                    {
+                        SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                        total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+                    }
+                }
+
+                SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSCF").Specific;
+                myTotalEditText.Value = total.ToString("N", sapNumberFormat);
+            }
+            else
+            {
+                for (int i = 1; i <= mOperations.RowCount; i++)
+                {
+                    if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
+                    {
+                        SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                        total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+                    }
+                }
+                SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSCF").Specific;
+                myTotalEditText.Value = total.ToString("N", sapNumberFormat);
+            }
+        }
+
+        internal static void OperationsTotalSubC(IForm uIAPIRawForm)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double total = 0;
+
+            SAPbouiCOM.Matrix mOperations = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
+
+            for (int i = 1; i <= mOperations.RowCount; i++)
+            {
+                if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
+                {
+                    SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                    total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+                }
+            }
+
+            SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSC").Specific;
+            myTotalEditText.Value = total.ToString("N", sapNumberFormat);
         }
 
         internal static (string AdditionalConditions, string ConcatenatedTextureCodes, string tClassExpression, string OpQuantityExpression) GetAdditionalConditions(List<Dictionary<string, string>> matrix1Values)
@@ -442,6 +578,19 @@ namespace STXGen2
             return (calcFactorExpression, concatenatedTextureCodes, tClassExpression, OpQuantityExpression);
         }
 
+        internal static void GetFiltersOperations(IForm uIAPIRawForm, EditText qCDocEntry)
+        {
+            SAPbouiCOM.ComboBox comboBox = (SAPbouiCOM.ComboBox)uIAPIRawForm.Items.Item("OPFilter").Specific;
+
+            // Clear existing values
+            while (comboBox.ValidValues.Count > 0)
+            {
+                comboBox.ValidValues.Remove(0, BoSearchKey.psk_Index);
+            }
+
+            DBCalls.GetFilterOperations(comboBox, qCDocEntry);
+            comboBox.Select(0, BoSearchKey.psk_Index);
+        }
 
         private static string GetConcatenatedTextureCodes(List<Dictionary<string, string>> matrix1Values)
         {
@@ -482,7 +631,6 @@ namespace STXGen2
 
             // Create a unique identifier for the DataTable
             string dataTableID = "Operations";
-            SAPbouiCOM.DataTable operations;
 
             // Check if the DataTable with the ID "Operations" exists
             if (!DataTableExists(uIAPIRawForm, dataTableID))
@@ -494,7 +642,14 @@ namespace STXGen2
                 operations = uIAPIRawForm.DataSources.DataTables.Item(dataTableID);
             }
 
-            DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value);
+            if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
+            {
+                DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+            }
+            else
+            {
+                DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+            }
 
             int operationscount = operations.Rows.Count;
             if (operationscount > 0)
@@ -551,7 +706,7 @@ namespace STXGen2
 
         private static void BindMatrixColumns(Matrix mOperations, string dataTableID)
         {
-            string[] columnsToBind = new[] { "#", "OPTexture", "OPResc", "OPResN", "OPcode", "OPName", "OPNameL", "OPStdT", "OPQtdT", "OPUom", "OPCost", "OPTotal", "OPErrMsg" };
+            string[] columnsToBind = new[] { "#", "OPTexture", "OPResc", "OPResN", "OPcode", "OPName", "OPNameL", "OPStdT", "OPQtdT", "OPUom", "OPCost", "OPTotal", "OPErrMsg", "OPSeq" };
 
             foreach (string column in columnsToBind)
             {
@@ -645,6 +800,157 @@ namespace STXGen2
                 uIAPIRawForm.Freeze(false);
             }
 
+        }
+
+        internal static void GetDefOperations(IForm uIAPIRawForm)
+        {
+            processOperationsListErr = 0;
+
+            SAPbouiCOM.Matrix mOperations = (Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
+            SAPbouiCOM.Matrix matrix1 = (Matrix)uIAPIRawForm.Items.Item("mTextures").Specific;
+
+            List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
+
+            processOperationsList(uIAPIRawForm, matrix1Values);
+            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values);
+        }
+
+        internal static void GetResultsfromFilter(IForm uIAPIRawForm, Matrix mOperations, string selectedValue)
+        {
+            Color selectionColor = Color.FromArgb(255, 0x83, 0xC5, 0x55);
+            int selection = (selectionColor.R) + (selectionColor.G << 8) + (selectionColor.B << 16);
+
+
+            if (selectedValue != "-1")
+            {
+                for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
+                {
+                    if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPSeq").Cells.Item(rowIndex).Specific).Value == selectedValue)
+                    {
+                        mOperations.CommonSetting.SetRowBackColor(rowIndex, selection);
+                    }
+                    else
+                    {
+                        mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                    }
+                }
+            }
+            else
+            {
+                for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
+                {
+                    mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                }
+            }
+            uIAPIRawForm.Mode = BoFormMode.fm_OK_MODE;
+
+        }
+
+
+        internal static double OperationsTotal(IForm uIAPIRawForm)
+        {
+            double total = 0;
+            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
+
+            for (int i = 1; i <= mOperations.RowCount; i++)
+            {
+                var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+            }
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOPTot", total);
+            return total;
+        }
+
+        internal static void OperationsTotalFilter(IForm uIAPIRawForm, string selectedValue)
+        {
+            double total = 0;
+            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
+
+            if (selectedValue != "-1")
+            {
+                for (int i = 1; i <= mOperations.RowCount; i++)
+                {
+                    if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPSeq").Cells.Item(i).Specific).Value == selectedValue)
+                    {
+                        var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                        total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+                    }
+                }
+            }
+            else
+            {
+                total = OperationsTotal(uIAPIRawForm); // Use the previously created method instead of repeating code
+            }
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", total);
+        }
+
+        internal static void OtherCosts(IForm uIAPIRawForm)
+        {
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOTCost", 0); // The total here is always 0, is it intentional?
+        }
+
+        internal static void OperationsTotalCosts(IForm uIAPIRawForm)
+        {
+            var myTotalOperationsCost = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific;
+            var myTotalOtherCost = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOTCost").Specific;
+
+            double operationsCost = HelperMethods.ParseSAPValueToDouble(myTotalOperationsCost.Value);
+            double otherCost = HelperMethods.ParseSAPValueToDouble(myTotalOtherCost.Value);
+            double total = operationsCost + otherCost;
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", total);
+        }
+
+        internal static double OperationsTotalHours(IForm uIAPIRawForm)
+        {
+            double total = 0;
+            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
+
+            for (int i = 1; i <= mOperations.RowCount; i++)
+            {
+                var opRescValue = ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString();
+                if (!opRescValue.StartsWith("SUBCON"))
+                {
+                    var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
+                    total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+                }
+            }
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalH", total);
+            return total;
+        }
+
+        internal static void OperationsTotalHoursFilter(IForm uIAPIRawForm, string selectedValue)
+        {
+            double total = 0;
+            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
+
+            if (selectedValue != "-1")
+            {
+                for (int i = 1; i <= mOperations.RowCount; i++)
+                {
+                    var opRescValue = ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString();
+                    if (opRescValue == selectedValue && !opRescValue.StartsWith("SUBCON"))
+                    {
+                        var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
+                        total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+                    }
+                }
+            }
+            else
+            {
+                total = OperationsTotalHours(uIAPIRawForm); // Use the previously created method instead of repeating code
+            }
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", total);
+        }
+
+        internal static void mtxLineDataRecalculation(IForm uIAPIRawForm, EditText opResc, EditText opNewQty, string previousQty, string newCost, string previousLineTotal)
+        {
+            SAPbouiCOM.EditText QCOPTot = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific;
+            HelperMethods.UpdateEditText(uIAPIRawForm,"QCOPTot", HelperMethods.ParseSAPValueToDouble(QCOPTot.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
         }
     }
 }

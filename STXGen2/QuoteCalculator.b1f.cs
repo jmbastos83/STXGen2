@@ -33,12 +33,15 @@ namespace STXGen2
         public static double DocExRate { get; private set; } = 0;
         public static string currentLength { get; private set; } = "";
         public static string currentWidth { get; private set; } = "";
-        public static string fileName { get; private set; } = "";
+        public static string currentHeight { get; private set; } = "";
+
         public static string ToolfileName { get; private set; } = "";
-        public static string newImagePath { get; private set; } = "";
         public string parttDescr { get; private set; } = "";
         public int lastBtnOpselection { get; private set; } = 0;
-        
+        public string oldPartType { get; private set; }
+        public string previousLineTotal { get; private set; }
+        public string newCost { get; private set; }
+        public string previousQty { get; private set; }
 
         private SAPbouiCOM.EditText QCDocEntry;
         private SAPbouiCOM.EditText QCItemCode;
@@ -82,7 +85,7 @@ namespace STXGen2
         private SAPbouiCOM.EditText QCLength;
         private SAPbouiCOM.EditText QCWidth;
         private SAPbouiCOM.EditText QCArea;
-        private SAPbouiCOM.EditText EditText4;
+        private SAPbouiCOM.EditText QCHeight;
 
         private SAPbouiCOM.EditText UnPrice;
         private SAPbouiCOM.EditText LCPrice;
@@ -96,6 +99,16 @@ namespace STXGen2
         private SAPbouiCOM.StaticText StaticText4;
 
         private StaticText lLCPrice;
+        private SAPbouiCOM.Button Button0;
+        private bool cellchecked;
+
+
+        private SAPbouiCOM.CheckBox DefBOM;
+        private SAPbouiCOM.ComboBox OPFilter;
+        private EditText EditText3;
+        private LinkedButton LinkedButton0;
+        private StaticText StaticText9;
+        private EditText EditText4;
 
 
 
@@ -109,114 +122,20 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeComponent()
         {
-            this.QCToolNum = ((SAPbouiCOM.EditText)(this.GetItem("QCToolNum").Specific));
-            this.QCPartNum = ((SAPbouiCOM.EditText)(this.GetItem("QCPartNum").Specific));
-            this.QCNElem = ((SAPbouiCOM.EditText)(this.GetItem("QCNElem").Specific));
-            this.QCPartName = ((SAPbouiCOM.EditText)(this.GetItem("QCPartN").Specific));
-            this.ButtonOk = ((SAPbouiCOM.Button)(this.GetItem("1").Specific));
-            this.ButtonOk.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.ButtonOk_PressedAfter);
-            this.ButtonOk.PressedBefore += new SAPbouiCOM._IButtonEvents_PressedBeforeEventHandler(this.ButtonOk_PressedBefore);
-            this.ButtonCancel = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
-            this.FOperations = ((SAPbouiCOM.Folder)(this.GetItem("FOper").Specific));
-            this.FOperations.ClickAfter += new SAPbouiCOM._IFolderEvents_ClickAfterEventHandler(this.FOperations_ClickAfter);
-            this.FOperations.PressedAfter += new SAPbouiCOM._IFolderEvents_PressedAfterEventHandler(this.FOperations_PressedAfter);
-            this.FGeneral = ((SAPbouiCOM.Folder)(this.GetItem("FGen").Specific));
-            this.FGeneral.ClickAfter += new SAPbouiCOM._IFolderEvents_ClickAfterEventHandler(this.FGeneral_ClickAfter);
-            this.mTextures = ((SAPbouiCOM.Matrix)(this.GetItem("mTextures").Specific));
-            this.mTextures.ClickBefore += new SAPbouiCOM._IMatrixEvents_ClickBeforeEventHandler(this.mTextures_ClickBefore);
-            this.mTextures.MatrixLoadAfter += new SAPbouiCOM._IMatrixEvents_MatrixLoadAfterEventHandler(this.mTextures_MatrixLoadAfter);
-            this.mTextures.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mTextures_ClickAfter);
-            this.mTextures.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mTextures_ChooseFromListAfter);
-            this.mOCosts = ((SAPbouiCOM.Matrix)(this.GetItem("mOCosts").Specific));
-            this.mOCosts.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOCosts_ClickAfter);
-            this.QCPartDesc = ((SAPbouiCOM.EditText)(this.GetItem("QCPartDesc").Specific));
-            this.QCPartType = ((SAPbouiCOM.EditText)(this.GetItem("QCPartType").Specific));
-            this.QCPartType.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.QCPartType_ChooseFromListAfter);
-            this.QCPartType.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.QCPartType_ChooseFromListBefore);
-            this.QCSubPart = ((SAPbouiCOM.EditText)(this.GetItem("QCSubPart").Specific));
-            this.QCSubPart.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.QCSubPart_ChooseFromListBefore);
-            this.SPartDescr = ((SAPbouiCOM.EditText)(this.GetItem("SPartDescr").Specific));
-            this.lItemCode = ((SAPbouiCOM.StaticText)(this.GetItem("lItemCode").Specific));
-            this.lToolNum = ((SAPbouiCOM.StaticText)(this.GetItem("lToolNum").Specific));
-            this.lPartNum = ((SAPbouiCOM.StaticText)(this.GetItem("lPartNum").Specific));
-            this.lItemName = ((SAPbouiCOM.StaticText)(this.GetItem("lItemName").Specific));
-            this.lNElem = ((SAPbouiCOM.StaticText)(this.GetItem("lNElem").Specific));
-            this.lPartName = ((SAPbouiCOM.StaticText)(this.GetItem("lPartName").Specific));
-            this.lPartDesc = ((SAPbouiCOM.StaticText)(this.GetItem("lPartDesc").Specific));
-            this.lPartType = ((SAPbouiCOM.StaticText)(this.GetItem("lPartType").Specific));
-            this.UnMsr = ((SAPbouiCOM.ComboBox)(this.GetItem("UnMsr").Specific));
-            this.UnMsr.ComboSelectBefore += new SAPbouiCOM._IComboBoxEvents_ComboSelectBeforeEventHandler(this.UnMsr_ComboSelectBefore);
-            this.UnMsr.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.UnMsr_ComboSelectAfter);
-            this.QCLength = ((SAPbouiCOM.EditText)(this.GetItem("QCLength").Specific));
-            this.QCLength.GotFocusAfter += new SAPbouiCOM._IEditTextEvents_GotFocusAfterEventHandler(this.QCLength_GotFocusAfter);
-            this.QCLength.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.QCLength_LostFocusAfter);
-            this.QCWidth = ((SAPbouiCOM.EditText)(this.GetItem("QCWidth").Specific));
-            this.QCWidth.GotFocusAfter += new SAPbouiCOM._IEditTextEvents_GotFocusAfterEventHandler(this.QCWidth_GotFocusAfter);
-            this.QCWidth.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.QCWidth_LostFocusAfter);
-            this.QCArea = ((SAPbouiCOM.EditText)(this.GetItem("QCArea").Specific));
-            this.EditText4 = ((SAPbouiCOM.EditText)(this.GetItem("QCHeight").Specific));
-            this.StaticText0 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_0").Specific));
-            this.StaticText1 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_1").Specific));
-            this.StaticText2 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_2").Specific));
-            this.StaticText3 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_3").Specific));
-            this.StaticText4 = ((SAPbouiCOM.StaticText)(this.GetItem("lDocEntry").Specific));
-            this.QCDocEntry = ((SAPbouiCOM.EditText)(this.GetItem("QCDocEntry").Specific));
-            this.QCItemCode = ((SAPbouiCOM.EditText)(this.GetItem("QCItemCode").Specific));
-            this.QCItemName = ((SAPbouiCOM.EditText)(this.GetItem("QCItemN").Specific));
-            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("QCOpA").Specific));
-            this.EditText2 = ((SAPbouiCOM.EditText)(this.GetItem("Item_8").Specific));
-            this.EditText5 = ((SAPbouiCOM.EditText)(this.GetItem("Item_10").Specific));
-            this.EditText6 = ((SAPbouiCOM.EditText)(this.GetItem("Item_11").Specific));
-            this.EditText7 = ((SAPbouiCOM.EditText)(this.GetItem("Item_12").Specific));
-            this.EditText8 = ((SAPbouiCOM.EditText)(this.GetItem("Item_13").Specific));
-            this.EditText9 = ((SAPbouiCOM.EditText)(this.GetItem("Item_14").Specific));
-            this.EditText10 = ((SAPbouiCOM.EditText)(this.GetItem("Item_15").Specific));
-            this.EditText12 = ((SAPbouiCOM.EditText)(this.GetItem("Item_17").Specific));
-            this.EditText13 = ((SAPbouiCOM.EditText)(this.GetItem("Item_18").Specific));
-            this.EditText14 = ((SAPbouiCOM.EditText)(this.GetItem("Item_19").Specific));
-            this.UnPrice = ((SAPbouiCOM.EditText)(this.GetItem("UnPrice").Specific));
-            this.UnPrice.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.UnPrice_LostFocusAfter);
-            this.LCPrice = ((SAPbouiCOM.EditText)(this.GetItem("LCPrice").Specific));
-            this.LCPrice.Item.Visible = false;
-            this.QCDocCur = ((SAPbouiCOM.EditText)(this.GetItem("QCDocCur").Specific));
-            this.LCCurr = ((SAPbouiCOM.EditText)(this.GetItem("LCCurr").Specific));
-            this.LCCurr.Item.Visible = false;
-            this.StaticText5 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_4").Specific));
-            this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_5").Specific));
-            this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_6").Specific));
-            this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("lUnPrice").Specific));
-            this.lLCPrice = ((SAPbouiCOM.StaticText)(this.GetItem("lLCPrice").Specific));
-            this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("QCObs").Specific));
-            this.StaticText10 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_23").Specific));
-            this.StaticText11 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_24").Specific));
-            this.StaticText12 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_25").Specific));
-            this.StaticText13 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_26").Specific));
-            this.StaticText15 = ((SAPbouiCOM.StaticText)(this.GetItem("lOpA").Specific));
-            this.StaticText16 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_29").Specific));
-            this.StaticText17 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_30").Specific));
-            this.StaticText18 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_31").Specific));
-            this.PictureBox0 = ((SAPbouiCOM.PictureBox)(this.GetItem("Item_32").Specific));
-            this.ToolImg = ((SAPbouiCOM.PictureBox)(this.GetItem("ToolImg").Specific));
-            this.ToolImg.ClickAfter += new SAPbouiCOM._IPictureBoxEvents_ClickAfterEventHandler(this.ToolImg_ClickAfter);
-            this.ToolImg.DoubleClickAfter += new SAPbouiCOM._IPictureBoxEvents_DoubleClickAfterEventHandler(this.ToolImg_DoubleClickAfter);
-            this.PicBrowse = ((SAPbouiCOM.Button)(this.GetItem("3").Specific));
-            this.PicBrowse.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.PicBrowse_PressedAfter);
-            this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("ToolPicC").Specific));
-            this.Button1.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button1_PressedAfter);
-            this.QCPinfo1 = ((SAPbouiCOM.EditText)(this.GetItem("QCPinfo1").Specific));
-            this.QCPinfo2 = ((SAPbouiCOM.EditText)(this.GetItem("QCPinfo2").Specific));
-            this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
-            this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
-            this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
-            this.mOperations.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mOperations_ClickAfter);
-            this.BtnGetOPC = ((SAPbouiCOM.ButtonCombo)(this.GetItem("btnGetOp").Specific));
-            this.BtnGetOPC.PressedAfter += new SAPbouiCOM._IButtonComboEvents_PressedAfterEventHandler(this.BtnGetOPC_PressedAfter);
-            this.BtnGetOPC.ComboSelectAfter += new SAPbouiCOM._IButtonComboEvents_ComboSelectAfterEventHandler(this.BtnGetOPC_ComboSelectAfter);
-            this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("OpRem").Specific));
-            this.Button0.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button0_PressedAfter);
+            this.Matrix1 = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
+            this.ButtonCombo0 = ((SAPbouiCOM.ButtonCombo)(this.GetItem("btnGetOp").Specific));
+            this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("OpRem").Specific));
+            this.CheckBox0 = ((SAPbouiCOM.CheckBox)(this.GetItem("DefBOM").Specific));
+            this.ComboBox0 = ((SAPbouiCOM.ComboBox)(this.GetItem("OPFilter").Specific));
+            this.EditText9 = ((SAPbouiCOM.EditText)(this.GetItem("QCWOrder").Specific));
+            this.LinkedButton1 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_21").Specific));
+            this.StaticText14 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
+            this.EditText11 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
             this.OnCustomInitialize();
 
         }
+
+
 
         /// <summary>
         /// Initialize form event. Called by framework before form creation.
@@ -224,7 +143,8 @@ namespace STXGen2
         public override void OnInitializeFormEvents()
         {
             this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
-            this.UnloadAfter += new UnloadAfterHandler(this.Form_UnloadAfter);
+            //this.UnloadAfter += new SAPbouiCOM.Framework.FormBase.UnloadAfterHandler(this.Form_UnloadAfter);
+            this.UnloadBefore += new UnloadBeforeHandler(this.Form_UnloadBefore);
 
         }
 
@@ -237,10 +157,8 @@ namespace STXGen2
 
                 this.UIAPIRawForm.Mode = SAPbouiCOM.BoFormMode.fm_FIND_MODE;
 
-                CultureInfo customCultureInfo = new CultureInfo("en-US");
-                customCultureInfo.NumberFormat.NumberDecimalSeparator = Utils.decSep;
-                customCultureInfo.NumberFormat.NumberGroupSeparator = Utils.thousSep;
-                DocExRate = double.Parse(exRate.ToString(customCultureInfo));
+                System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+                DocExRate = double.Parse(exRate.ToString("F"), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
 
                 QCItemCode.Value = itemCode;
                 QCItemName.Value = itemName;
@@ -259,9 +177,6 @@ namespace STXGen2
 
 
                 //eDocEntry.Item.Enabled = false;
-                this.Show();
-
-
 
                 //// Translate the labels on the form
                 //SAPbouiCOM.Form form = Program.SBO_Application.Forms.Item(this.UIAPIRawForm.UniqueID);
@@ -300,23 +215,31 @@ namespace STXGen2
                 {
                     if (Utils.DirectRate == "Y")
                     {
-                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(unPrice) ? "0" : unPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", "")) * DocExRate;
-                        LCPrice.Value = $"{LCprice.ToString("0.00")} {Utils.MainCurrency}";
+                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(unPrice) ? "0" : unPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat) * DocExRate;
+                        LCPrice.Value = $"{LCprice.ToString("#,0.00", sapNumberFormat)} {Utils.MainCurrency}";
 
                     }
                     else
                     {
-                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(unPrice) ? "0" : unPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", "")) / DocExRate;
-                        LCPrice.Value = $"{LCprice.ToString("0.00")} {Utils.MainCurrency}";
+                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(unPrice) ? "0" : unPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat) / DocExRate;
+                        LCPrice.Value = $"{LCprice.ToString("#,0.00", sapNumberFormat)} {Utils.MainCurrency}";
                     }
                     LCCurr.Value = Utils.MainCurrency;
                     this.LCPrice.Item.Visible = true;
                     this.LCCurr.Item.Visible = true;
                     this.lLCPrice.Item.Visible = true;
-    }
+                }
 
                 currentPrice = this.UnPrice.Value;
+
+                QCEvents.GetSubPartType(UIAPIRawForm, this.QCSubPart);
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
+
+                QCEvents.GetFiltersOperations(this.UIAPIRawForm, this.QCDocEntry);
+
+                FormDataRecalculation();
+
+                PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
 
                 // Check if mTextures matrix has 0 rows and add a new row if needed
                 if (mTextures.RowCount == 0)
@@ -330,7 +253,7 @@ namespace STXGen2
                     newAutoRow.Value = "1";
                 }
 
-                
+                this.Show();
 
             }
             catch (Exception ex)
@@ -363,7 +286,7 @@ namespace STXGen2
         }
 
 
-        
+
 
 
         private void mTextures_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
@@ -376,7 +299,7 @@ namespace STXGen2
 
                 if (pVal.ItemUID == "mTextures" && pVal.ColUID == "QCTexture")
                 {
-                    
+
                     if (isChooseFromListTriggered)
                     {
                         isChooseFromListTriggered = false;
@@ -401,7 +324,7 @@ namespace STXGen2
                         ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(selectedMatrixRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
                         ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(selectedMatrixRow).Specific).Select("2", BoSearchKey.psk_ByValue);
                         ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(selectedMatrixRow).Specific).Value = TextureCode;
-                        
+
                     }
                 }
 
@@ -436,6 +359,7 @@ namespace STXGen2
 
             if (pVal.ItemChanged == true && loadingForm == false)
             {
+                System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
 
                 // Get the selected Unit of Measure
                 SAPbouiCOM.ComboBox uomComboBox = (SAPbouiCOM.ComboBox)this.UIAPIRawForm.Items.Item("UnMsr").Specific;
@@ -444,17 +368,21 @@ namespace STXGen2
                 // Get the current Length and Width values
                 EditText edtLength = (EditText)this.UIAPIRawForm.Items.Item("QCLength").Specific;
                 EditText edtWidth = (EditText)this.UIAPIRawForm.Items.Item("QCWidth").Specific;
+                EditText edtHeight = (EditText)this.UIAPIRawForm.Items.Item("QCHeight").Specific;
 
-                double length = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtLength.Value) ? "0" : edtLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
-                double width = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtWidth.Value) ? "0" : edtWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
+                double length = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtLength.Value) ? "0" : edtLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                double width = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtWidth.Value) ? "0" : edtWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                double height = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtHeight.Value) ? "0" : edtHeight.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
 
                 // Perform the conversion based on the selected Unit of Measure
                 double convertedLength = DBCalls.ConvertDimensions(length, selectedUOM, previousUOM);
                 double convertedWidth = DBCalls.ConvertDimensions(width, selectedUOM, previousUOM);
+                double convertedHeight = DBCalls.ConvertDimensions(height, selectedUOM, previousUOM);
 
                 // Update the Length and Width fields with the converted values
-                edtLength.Value = $"{Math.Round(convertedLength, Utils.MeasureDec)}";
-                edtWidth.Value = $"{Math.Round(convertedWidth, Utils.MeasureDec)}";
+                edtLength.Value = $"{Math.Round(convertedLength, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
+                edtWidth.Value = $"{Math.Round(convertedWidth, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
+                edtHeight.Value = $"{Math.Round(convertedHeight, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
 
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
 
@@ -494,7 +422,7 @@ namespace STXGen2
         private EditText EditText6;
         private EditText EditText7;
         private EditText EditText8;
-        private EditText EditText9;
+        private EditText QCTEst;
         private EditText EditText10;
         private EditText EditText12;
         private EditText EditText13;
@@ -502,50 +430,45 @@ namespace STXGen2
         private UserDataSource oUserDataSource;
         private bool lostFocusQCLength = false;
         private bool lostFocusQCWidth = false;
+        private bool lostFocusQCHeight = false;
+
 
         private void UnPrice_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
             if (currentPrice != this.UnPrice.Value)
             {
-                double newPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(this.UnPrice.Value) ? "0" : this.UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
-                UnPrice.Value = $"{newPrice.ToString("0.00")} {this.QCDocCur.Value}";
+                double newPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(this.UnPrice.Value) ? "0" : this.UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                UnPrice.Value = $"{newPrice.ToString("#,0.00", sapNumberFormat)} {this.QCDocCur.Value}";
 
                 if (Utils.MainCurrency != this.QCDocCur.Value)
                 {
                     if (Utils.DirectRate == "Y")
                     {
-                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(UnPrice.Value) ? "0" : UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", "")) * DocExRate;
-                        LCPrice.Value = $"{LCprice.ToString("0.00")} {Utils.MainCurrency}";
+                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(UnPrice.Value) ? "0" : UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat) * DocExRate;
+                        LCPrice.Value = $"{LCprice.ToString("#,0.00")} {Utils.MainCurrency}";
 
                     }
                     else
                     {
-                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(UnPrice.Value) ? "0" : UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", "")) / DocExRate;
-                        LCPrice.Value = $"{LCprice.ToString("0.00")} {Utils.MainCurrency}";
+                        double LCprice = double.Parse(Regex.Replace((string.IsNullOrEmpty(UnPrice.Value) ? "0" : UnPrice.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat) / DocExRate;
+                        LCPrice.Value = $"{LCprice.ToString("#,0.00")} {Utils.MainCurrency}";
                     }
                     LCCurr.Value = Utils.MainCurrency;
                     this.LCPrice.Item.Visible = true;
                     this.LCCurr.Item.Visible = true;
 
-                    PictureBox0.Picture = QCEvents.LoadImageFromResources();
-                    //if (LCPrice=0)
-                    //{
-                    //    PictureBox0.Picture = Properties.Resources.
-                    //}
-                    //else if (condition2)
-                    //{
-                    //    imagePath = "C:\\image3.png";
-                    //}
-                    //else
-                    //{
-                    //    imagePath = "C:\\image1.png"; // default image path
-                    //}
+                    PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
                 }
             }
         }
 
         private void QCLength_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double qcLength = 0;
+
             if (currentLength != QCLength.Value)
             {
                 if (lostFocusQCLength)
@@ -553,16 +476,30 @@ namespace STXGen2
                     lostFocusQCLength = false;
                     return;
                 }
-                this.QCLength.Value = $"{this.QCLength.Value} {selectedUOM}";
+                try
+                {
+                    qcLength = double.Parse(this.QCLength.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+
+                }
+                catch (Exception)
+                {
+                    qcLength = 0;
+                    Program.SBO_Application.SetStatusBarMessage("Please, place a numeric value.", BoMessageTime.bmt_Short, true);
+                }
+                string formattedQCLength = qcLength.ToString("#,0.00", sapNumberFormat);
+
+                this.QCLength.Value = $"{formattedQCLength} {selectedUOM}";
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusQCLength = true;
-
             }
 
         }
 
         private void QCWidth_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double qcWidth = 0;
+
             if (currentWidth != QCWidth.Value)
             {
                 if (lostFocusQCWidth)
@@ -570,7 +507,19 @@ namespace STXGen2
                     lostFocusQCWidth = false;
                     return;
                 }
-                this.QCWidth.Value = $"{this.QCWidth.Value} {selectedUOM}";
+                try
+                {
+                    qcWidth = double.Parse(this.QCWidth.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                }
+                catch (Exception)
+                {
+                    qcWidth = 0;
+                    Program.SBO_Application.SetStatusBarMessage("Please, place a numeric value.", BoMessageTime.bmt_Short, true);
+                }
+
+                string formattedQCWidth = qcWidth.ToString("#,0.00", sapNumberFormat);
+
+                this.QCWidth.Value = $"{formattedQCWidth} {selectedUOM}";
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusQCWidth = true;
             }
@@ -594,7 +543,7 @@ namespace STXGen2
         private StaticText StaticText6;
         private StaticText StaticText7;
         private StaticText StaticText8;
-        
+
         private EditText EditText0;
         private StaticText StaticText10;
         private StaticText StaticText11;
@@ -712,6 +661,16 @@ namespace STXGen2
             BubbleEvent = true;
             ToolImg.Picture = Path.GetFileName(ToolImg.Picture);
 
+            for (int i = 1; i <= mOperations.RowCount; i++)
+            {
+                SAPbouiCOM.EditText cellvalue = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPErrMsg").Cells.Item(i).Specific;
+                if (!string.IsNullOrEmpty(cellvalue.Value))
+                {
+                    SAPbouiCOM.Framework.Application.SBO_Application.StatusBar.SetText("Please correct all the errors on the operations matrix before proceding...", SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+                    BubbleEvent = false; // This will prevent the event from propagating further
+                    return;
+                }
+            }
         }
 
 
@@ -726,7 +685,7 @@ namespace STXGen2
             {
                 ToolImg.Picture = "";
             }
-         }
+        }
 
 
         private void ToolImg_DoubleClickAfter(object sboObject, SBOItemEventArg pVal)
@@ -782,6 +741,7 @@ namespace STXGen2
             BubbleEvent = true;
             try
             {
+
                 SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("cflPartT");
                 SAPbobsCOM.Recordset oRS = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
                 string strSQL = $"SELECT T0.\"ItemCode\", T0.\"ItemName\" as \"Part Name\" FROM OITM T0 WHERE T0.\"ItemCode\" like 'SPT-%' and T0.\"ItemCode\" like '%00'";
@@ -833,7 +793,7 @@ namespace STXGen2
 
                 SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("cflSPart");
                 SAPbobsCOM.Recordset oRS = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-                string strSQL = $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE left(OITM.\"ItemCode\",5) = left('{this.QCPartType.Value}',5) and OITM.\"ItemCode\" not like 'SPT-%00'";
+                string strSQL = $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE left(OITM.\"ItemCode\",6) = left('{this.QCPartType.Value}',6) and OITM.\"ItemCode\" not like 'SPT-%00'";
                 oRS.DoQuery(strSQL);
 
                 oCons = null;
@@ -891,12 +851,21 @@ namespace STXGen2
             {
                 case 0:
                     QCEvents.GetOperations(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
                     break;
                 case 1:
                     QCEvents.GetOperationsGrp(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
                     break;
                 default:
                     QCEvents.GetOperations(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
                     break;
             }
         }
@@ -906,13 +875,46 @@ namespace STXGen2
             switch (lastBtnOpselection)
             {
                 case 0:
+
+                    if (this.DefBOM.Checked == true)
+                    {
+                        DefBOM.Checked = false;
+                        mOperations.Clear();
+                    }
+                    this.UIAPIRawForm.Freeze(true);
                     QCEvents.GetOperations(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
+                    this.UIAPIRawForm.Freeze(false);
                     break;
                 case 1:
+
+                    if (this.DefBOM.Checked == true)
+                    {
+                        DefBOM.Checked = false;
+                        mOperations.Clear();
+                    }
+                    this.UIAPIRawForm.Freeze(true);
                     QCEvents.GetOperationsGrp(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
+                    this.UIAPIRawForm.Freeze(false);
                     break;
                 default:
+
+                    if (this.DefBOM.Checked == true)
+                    {
+                        DefBOM.Checked = false;
+                        mOperations.Clear();
+                    }
+                    this.UIAPIRawForm.Freeze(true);
                     QCEvents.GetOperations(this.UIAPIRawForm);
+                    QCEvents.OperationsTotal(this.UIAPIRawForm);
+                    QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                    QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
+                    this.UIAPIRawForm.Freeze(false);
                     break;
             }
         }
@@ -936,11 +938,13 @@ namespace STXGen2
 
         }
 
-        private void Form_UnloadAfter(SBOItemEventArg pVal)
+        private void Form_UnloadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
         {
+            BubbleEvent = true;
+
             QuoteCalculator.mtxMaxLineID = 0;
             selectedMatrixRow = -1;
-          
+
             if (pVal.FormMode != 2 && QCEvents.operationsUpdate == true)
             {
                 SAPbouiCOM.DataTable mOperations = QCEvents.operations;
@@ -954,6 +958,7 @@ namespace STXGen2
 
             }
             QCEvents.operationsUpdate = false;
+
         }
 
         private System.Data.DataTable ConvertToDataTable(SAPbouiCOM.DataTable sapDataTable)
@@ -984,7 +989,7 @@ namespace STXGen2
 
         }
 
-        private SAPbouiCOM.Button Button0;
+
 
         private void FOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -1017,7 +1022,7 @@ namespace STXGen2
             if (texturesFolder.Selected)
             {
                 resizeTextureFormUI();
-                
+
             }
             else if (operationsFolder.Selected)
             {
@@ -1031,7 +1036,7 @@ namespace STXGen2
             mOperations.AutoResizeColumns();
             mTextures.AutoResizeColumns();
             mOCosts.AutoResizeColumns();
-            
+
 
         }
 
@@ -1065,6 +1070,22 @@ namespace STXGen2
             matrix2Item.Top = QCPinfo2.Item.Top + QCPinfo2.Item.Height + 10;  //matrix1Item.Top + matrix1Item.Height + 20; // Add an additional space between the matrices
             matrix2Item.Width = availableWidth / 2;
             matrix2Item.Height = fixedMatrixHeight;
+
+            SAPbouiCOM.Item obsText = this.UIAPIRawForm.Items.Item("QCObs");
+            obsText.Top = this.UIAPIRawForm.Height - obsText.Height - 80; // 50 pixel gap from bottom of form
+
+            int minDistanceFromTab = 30;
+            if (obsText.Top < tabControlItem.Top + tabControlItem.Height + minDistanceFromTab)
+            {
+                obsText.Top = tabControlItem.Top + tabControlItem.Height + minDistanceFromTab;
+            }
+
+            SAPbouiCOM.Item cancelButton = this.UIAPIRawForm.Items.Item("2"); // Replace "OkButton" with the actual ID of your Ok button
+            if (obsText.Top + obsText.Height > cancelButton.Top)
+            {
+                obsText.Top = cancelButton.Top - obsText.Height - 10; // Keeps a 10 pixel gap from the Ok button
+            }
+
             this.UIAPIRawForm.Freeze(false);
         }
 
@@ -1095,9 +1116,24 @@ namespace STXGen2
             // Calculate the top position of the matrix inside the tab control
             int matrixTopPosition = matrix1Item.Top - tabControlItem.Top;
             int matrixHeight = matrix1Item.Height;
-                 
+
             // Calculate the new top position for the OpRem button based on the matrix height and desired spacing
             remOperationsBtn.Top = tabControlItem.Top + tabControlHeight - 25;
+
+            SAPbouiCOM.Item obsText = this.UIAPIRawForm.Items.Item("QCObs");
+            obsText.Top = this.UIAPIRawForm.Height - obsText.Height - 80; // 50 pixel gap from bottom of form
+
+            int minDistanceFromTab = 30;
+            if (obsText.Top < tabControlItem.Top + tabControlItem.Height + minDistanceFromTab)
+            {
+                obsText.Top = tabControlItem.Top + tabControlItem.Height + minDistanceFromTab;
+            }
+
+            SAPbouiCOM.Item cancelButton = this.UIAPIRawForm.Items.Item("2"); // Replace "OkButton" with the actual ID of your Ok button
+            if (obsText.Top + obsText.Height > cancelButton.Top)
+            {
+                obsText.Top = cancelButton.Top - obsText.Height - 10; // Keeps a 10 pixel gap from the Ok button
+            }
 
             this.UIAPIRawForm.Freeze(false);
         }
@@ -1124,13 +1160,297 @@ namespace STXGen2
                 {
                     // Remove the row from the matrix
                     mOperations.DeleteRow(rowIndex);
-                    mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                    if (rowIndex <= mOperations.RowCount)
+                    {
+                        mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                    }
+                    // Add the index to the set of deleted rows
+                    QCEvents.deletedRows.Add(rowIndex);
                 }
+            }
+
+            // Update the VisOrder column for the remaining rows
+            for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
+            {
+                ((SAPbouiCOM.EditText)mOperations.Columns.Item("#").Cells.Item(rowIndex).Specific).Value = rowIndex.ToString();
             }
             // Synchronize the matrix data with the data source
             mOperations.FlushToDataSource();
 
             this.UIAPIRawForm.Freeze(false);
         }
+
+        private void QCHeight_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double qcHeight = 0;
+
+            if (currentHeight != QCHeight.Value)
+            {
+                if (lostFocusQCHeight)
+                {
+                    lostFocusQCHeight = false;
+                    return;
+                }
+                try
+                {
+                    qcHeight = double.Parse(this.QCHeight.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                }
+                catch (Exception)
+                {
+                    qcHeight = 0;
+                    Program.SBO_Application.SetStatusBarMessage("Please, place a numeric value.", BoMessageTime.bmt_Short, true);
+                }
+
+                string formattedQCHeight = qcHeight.ToString("#,0.00", sapNumberFormat);
+
+                this.QCHeight.Value = $"{formattedQCHeight} {selectedUOM}";
+                lostFocusQCHeight = true;
+
+            }
+
+        }
+
+        private void mOperations_DoubleClickAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPcheck")
+            {
+                this.UIAPIRawForm.Freeze(true);
+                if (!cellchecked)
+                {
+                    for (int i = 0; i < mOperations.RowCount; i++)
+                    {
+                        ((SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(i + 1).Specific).Checked = true;
+                        cellchecked = true;
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < mOperations.RowCount; i++)
+                    {
+                        ((SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(i + 1).Specific).Checked = false;
+                        cellchecked = false;
+                    }
+                }
+                this.UIAPIRawForm.Freeze(false);
+            }
+
+        }
+
+        private void QCHeight_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            currentHeight = QCHeight.Value;
+        }
+
+
+        private void OPFilter_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            try
+            {
+                this.UIAPIRawForm.Freeze(true);
+                // Get the selected value from the ComboBox
+
+                string selectedValue = OPFilter.Selected.Value;
+
+                string dataSourceId = mOperations.Columns.Item("OPSeq").DataBind.Alias.ToString();
+                QCEvents.GetResultsfromFilter(this.UIAPIRawForm, mOperations, selectedValue);
+                QCEvents.OperationsTotalFilter(this.UIAPIRawForm, selectedValue);
+            }
+            catch (Exception ex)
+            {
+
+                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, false);
+            }
+            finally
+            {
+                this.UIAPIRawForm.Freeze(false);
+            }
+
+        }
+
+        private void QCSubPart_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+            string chooseFromListId = chooseFromListEventArg.ChooseFromListUID;
+            SAPbouiCOM.ChooseFromList chooseFromList = this.UIAPIRawForm.ChooseFromLists.Item(chooseFromListId);
+
+            // Get the selected item from the Choose From List
+            SAPbouiCOM.DataTable selectedDataTable = chooseFromListEventArg.SelectedObjects;
+            if (selectedDataTable != null && selectedDataTable.Rows.Count > 0)
+            {
+                string sptCode = selectedDataTable.GetValue("ItemCode", 0).ToString();
+                parttDescr = selectedDataTable.GetValue("ItemName", 0).ToString();
+
+                this.SPartDescr.Value = this.SPartDescr.Value + ": " + parttDescr;
+            }
+
+        }
+
+        private void QCPartType_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            if (oldPartType != this.QCPartType.Value)
+            {
+                this.QCSubPart.Value = "";
+            }
+
+        }
+
+        private void QCPartType_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            oldPartType = this.QCPartType.Value;
+        }
+
+        private void DefBOM_PressedAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            if (this.DefBOM.Checked == true)
+            {
+                this.mOperations.Clear();
+                QCEvents.GetDefOperations(this.UIAPIRawForm);
+                QCEvents.OperationsTotal(this.UIAPIRawForm);
+                QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+                QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
+            }
+            else
+            {
+                this.mOperations.Clear();
+            }
+
+        }
+
+
+        private void FormDataRecalculation()
+        {
+            var uIAPIRawForm = this.UIAPIRawForm;
+
+            Parallel.Invoke(
+                () => QCEvents.OperationsTotal(UIAPIRawForm),
+                () => QCEvents.OperationsTotalFilter(UIAPIRawForm, OPFilter.Selected.Value),
+                () => QCEvents.OtherCosts(UIAPIRawForm),
+                () => QCEvents.OperationsTotalHours(UIAPIRawForm),
+                () => QCEvents.OperationsTotalHoursFilter(UIAPIRawForm, OPFilter.Selected.Value),
+                () => QCEvents.OperationsTotalSubC(UIAPIRawForm),
+                () => QCEvents.OperationsTotalSubCFilter(UIAPIRawForm, OPFilter.Selected.Value)
+                );
+
+            Parallel.Invoke(
+                () => QCEvents.OperationsTotalCosts(UIAPIRawForm)
+
+            );
+
+            //QCEvents.OperationsTotal(this.UIAPIRawForm);
+            //QCEvents.OperationsTotalFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+            //QCEvents.OtherCosts(this.UIAPIRawForm);
+            //QCEvents.OperationsTotalCosts(this.UIAPIRawForm);
+
+            //QCEvents.OperationsTotalHours(this.UIAPIRawForm);
+            //QCEvents.OperationsTotalHoursFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+
+            //QCEvents.OperationsTotalSubC(this.UIAPIRawForm);
+            //QCEvents.OperationsTotalSubCFilter(this.UIAPIRawForm, OPFilter.Selected.Value);
+        }
+
+        private void mOperations_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+
+
+            if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPResc" && pVal.ActionSuccess == true)
+            {
+                string resCode = "";
+                SAPbouiCOM.EditText resource = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText resCost = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPCost").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText resQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText totalResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
+
+
+                SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+                string chooseFromListId = chooseFromListEventArg.ChooseFromListUID;
+                SAPbouiCOM.ChooseFromList chooseFromList = this.UIAPIRawForm.ChooseFromLists.Item(chooseFromListId);
+
+                // Get the selected item from the Choose From List
+                SAPbouiCOM.DataTable selectedDataTable = chooseFromListEventArg.SelectedObjects;
+                if (selectedDataTable != null && selectedDataTable.Rows.Count > 0)
+                {
+                    resCode = selectedDataTable.GetValue("VisResCode", 0).ToString();
+
+                }
+                string subCost = DBCalls.ResCost(resCode);
+
+                this.UIAPIRawForm.Freeze(true);
+                resource.Value = resCode;
+                resCost.Value = subCost;
+
+                double subCostValue, resQtyValue;
+
+                if (double.TryParse(subCost, NumberStyles.Any, CultureInfo.InvariantCulture, out subCostValue) && double.TryParse(resQty.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out resQtyValue))
+                {
+                    totalResc.Value = (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture);
+                }
+                mOperations.FlushToDataSource();
+                mOperations.LoadFromDataSource();
+                this.UIAPIRawForm.Freeze(false);
+            }
+
+        }
+
+        private void mOperations_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPQtdT" && pVal.ActionSuccess == true)
+            {
+                SAPbouiCOM.EditText opResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText opTotal = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText opNewQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
+                SAPbouiCOM.EditText opRescCost = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPCost").Cells.Item(pVal.Row).Specific;
+
+
+                double opNewQtyValue, opRescCostValue;
+
+                if (double.TryParse(opNewQty.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out opNewQtyValue) && double.TryParse(opRescCost.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out opRescCostValue))
+                {
+                    //opTotal.Value = (opNewQtyValue * opRescCostValue).ToString();
+                    newCost = (opNewQtyValue * opRescCostValue).ToString(CultureInfo.InvariantCulture);
+                    opTotal.Value = newCost;
+
+                }
+
+                else
+                {
+                    opTotal.Value = "0";
+                }
+                this.UIAPIRawForm.Freeze(true);
+                mOperations.FlushToDataSource();
+                mOperations.LoadFromDataSource();
+
+
+
+                QCEvents.mtxLineDataRecalculation(this.UIAPIRawForm,opResc,opNewQty, previousQty,newCost, previousLineTotal);
+
+                this.UIAPIRawForm.Freeze(false);
+            }
+        }
+
+        private Matrix Matrix0;
+
+        private void Matrix0_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            if (pVal.ItemUID == "mOper")
+            {
+                SAPbouiCOM.EditText opQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
+                previousQty = opQty.Value;
+                SAPbouiCOM.EditText opTotal = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
+                previousLineTotal = opTotal.Value;
+            }
+            
+
+        }
+
+        private Matrix Matrix1;
+        private ButtonCombo ButtonCombo0;
+        private SAPbouiCOM.Button Button2;
+        private SAPbouiCOM.CheckBox CheckBox0;
+        private SAPbouiCOM.ComboBox ComboBox0;
+        private EditText EditText9;
+        private LinkedButton LinkedButton1;
+        private StaticText StaticText14;
+        private EditText EditText11;
     }
 }
