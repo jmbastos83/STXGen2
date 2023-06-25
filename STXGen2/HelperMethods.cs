@@ -1,5 +1,6 @@
 ﻿using SAPbouiCOM;
 using System.Globalization;
+using System.Text.RegularExpressions;
 
 namespace STXGen2
 {
@@ -20,6 +21,11 @@ namespace STXGen2
         {
             SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item(itemId).Specific;
             myTotalEditText.Value = total.ToString("N", sapNumberFormat);
+        }
+
+        internal static double ParseDoubleWCur(string value, NumberFormatInfo numberFormat)
+        {
+            return double.Parse(Regex.Replace((string.IsNullOrEmpty(value) ? "0" : value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, numberFormat);
         }
     }
 }

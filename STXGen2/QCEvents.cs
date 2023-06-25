@@ -274,8 +274,8 @@ namespace STXGen2
             EditText edtQCWidth = (EditText)oForm.Items.Item("QCWidth").Specific;
             EditText edtQCArea = (EditText)oForm.Items.Item("QCArea").Specific;
 
-            double length = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCLength.Value) ? "0" : edtQCLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
-            double width = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtQCWidth.Value) ? "0" : edtQCWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+            double length = HelperMethods.ParseDoubleWCur(edtQCLength.Value, sapNumberFormat);
+            double width = HelperMethods.ParseDoubleWCur(edtQCWidth.Value, sapNumberFormat);
 
             double area = length * width;
             string areaFormatted = area.ToString("N", sapNumberFormat);
@@ -297,12 +297,12 @@ namespace STXGen2
 
             if (Utils.MainCurrency != DocCur)
             {
-                compPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(LCPrice) ? "0" : LCPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                compPrice = HelperMethods.ParseDoubleWCur(LCPrice, sapNumberFormat); //double.Parse(Regex.Replace((string.IsNullOrEmpty(LCPrice) ? "0" : LCPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
 
             }
             else
             {
-                compPrice = double.Parse(Regex.Replace((string.IsNullOrEmpty(Price) ? "0" : Price), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                compPrice = HelperMethods.ParseDoubleWCur(Price, sapNumberFormat); //double.Parse(Regex.Replace((string.IsNullOrEmpty(Price) ? "0" : Price), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
             }
 
             compCost = double.Parse(Cost, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
@@ -411,9 +411,10 @@ namespace STXGen2
                 // Set the selection mode back to the default after loading the data source.
                 OperationsMatrix.SelectionMode = BoMatrixSelect.ms_Auto;
             }
-            QCEvents.OperationsTotal(oForm);
-            QCEvents.OperationsTotalFilter(oForm, OPFilter.Selected.Value);
-            QCEvents.OperationsTotalCosts(oForm);
+
+            //QCEvents.OperationsTotal(oForm);
+            //QCEvents.OperationsTotalFilter(oForm, OPFilter.Selected.Value);
+            //QCEvents.OperationsTotalCosts(oForm);
         }
 
         internal static void RemoveLinefromTexturesMatrix(SAPbouiCOM.Form oForm, Matrix texturesMatrix, int selectedMatrixRow)
@@ -551,7 +552,7 @@ namespace STXGen2
                 tClass = rowValues["QCTClass"];
                 GeoComplex = rowValues["QCGComp"];
                 coverageArea = Regex.Replace(rowValues["QCCovA"], $@"[^\d{Utils.decSep}{Utils.thousSep}]", "");
-                coverageArea = DBCalls.ConvertDimMeters(double.Parse(coverageArea), QuoteCalculator.selectedUOM);
+                coverageArea = DBCalls.ConvertDimMeters(HelperMethods.ParseSAPValueToDouble(coverageArea), QuoteCalculator.selectedUOM);
 
                 string condition1 = $"WHEN T2.\"U_standexReference\" = '{textureCode}' AND T1.\"U_STXQtyBy\" = 'A' THEN {coverageArea}";
                 calcFactorList.Add(condition1);
@@ -847,24 +848,12 @@ namespace STXGen2
         }
 
 
-        internal static double OperationsTotal(IForm uIAPIRawForm)
-        {
-            double total = 0;
-            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
-
-            for (int i = 1; i <= mOperations.RowCount; i++)
-            {
-                var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
-                total += HelperMethods.ParseValueToDouble(optotalCell.Value);
-            }
-
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOPTot", total);
-            return total;
-        }
-
         internal static void OperationsTotalFilter(IForm uIAPIRawForm, string selectedValue)
         {
-            double total = 0;
+            double totalop = 0;
+            double totalsub = 0;
+            double totalqty = 0;
+
             var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
 
             if (selectedValue != "-1")
@@ -873,39 +862,91 @@ namespace STXGen2
                 {
                     if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPSeq").Cells.Item(i).Specific).Value == selectedValue)
                     {
-                        var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
-                        total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+                        var opRescValue = ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString();
+                        if (!opRescValue.StartsWith("SUBCON"))
+                        {
+                            var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                            totalop += HelperMethods.ParseValueToDouble(optotalCell.Value);
+
+                            var qtytotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
+                            totalqty += HelperMethods.ParseValueToDouble(qtytotalCell.Value);
+                        }
+                        else
+                        {
+                            var subtotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                            totalsub += HelperMethods.ParseValueToDouble(subtotalCell.Value);
+                        }
                     }
                 }
             }
             else
             {
-                total = OperationsTotal(uIAPIRawForm); // Use the previously created method instead of repeating code
+                totalop = HelperMethods.ParseSAPValueToDouble(((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific).Value);
+                totalqty = HelperMethods.ParseSAPValueToDouble(((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalH").Specific).Value);
+                totalsub = HelperMethods.ParseSAPValueToDouble(((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSC").Specific).Value);
+
             }
 
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", total);
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", totalop);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSCF", totalsub);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", totalqty);
         }
 
-        internal static void OtherCosts(IForm uIAPIRawForm)
+
+        internal static void mtxLineDataRecalculation(IForm uIAPIRawForm, string opResc, EditText opNewQty, string previousQty, string newCost, string previousLineTotal, string itemUID, string previousResc)
         {
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOTCost", 0); // The total here is always 0, is it intentional?
+            SAPbouiCOM.EditText QCOPTot = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific;
+            SAPbouiCOM.EditText QCOpA = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOpA").Specific;
+            SAPbouiCOM.EditText QCOTCost = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOTCost").Specific;
+            SAPbouiCOM.EditText QCTEst = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTEst").Specific;
+
+            SAPbouiCOM.EditText QCTotalHF = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalHF").Specific;
+            SAPbouiCOM.EditText QCTotalH = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalH").Specific;
+
+            SAPbouiCOM.EditText QCTotalSCF = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSCF").Specific;
+            SAPbouiCOM.EditText QCTotalSC = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSC").Specific;
+            if (itemUID == "mOper")
+            {
+                if (!opResc.ToString().StartsWith("SUBCON") && !previousResc.ToString().StartsWith("SUBCON"))
+                {
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCOPTot", HelperMethods.ParseSAPValueToDouble(QCOPTot.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", HelperMethods.ParseSAPValueToDouble(QCOpA.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+                    //HelperMethods.UpdateEditText(uIAPIRawForm, "QCOTCost", HelperMethods.ParseSAPValueToDouble(QCOTCost.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", HelperMethods.ParseSAPValueToDouble(QCTotalHF.Value) - HelperMethods.ParseValueToDouble(previousQty) + HelperMethods.ParseValueToDouble(opNewQty.Value));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalH", HelperMethods.ParseSAPValueToDouble(QCTotalH.Value) - HelperMethods.ParseValueToDouble(previousQty) + HelperMethods.ParseValueToDouble(opNewQty.Value));
+
+                }
+                if (opResc.ToString().StartsWith("SUBCON") && previousResc.ToString().StartsWith("SUBCON"))
+                {
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSCF", HelperMethods.ParseSAPValueToDouble(QCTotalSCF.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSC", HelperMethods.ParseSAPValueToDouble(QCTotalSC.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+                }
+                if (opResc.ToString().StartsWith("SUBCON") && !previousResc.ToString().StartsWith("SUBCON"))
+                {
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCOPTot", HelperMethods.ParseSAPValueToDouble(QCOPTot.Value) - HelperMethods.ParseValueToDouble(previousLineTotal));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", HelperMethods.ParseSAPValueToDouble(QCOpA.Value) - HelperMethods.ParseValueToDouble(previousLineTotal));
+                    //HelperMethods.UpdateEditText(uIAPIRawForm, "QCOTCost", HelperMethods.ParseSAPValueToDouble(QCOTCost.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", HelperMethods.ParseSAPValueToDouble(QCTotalHF.Value) - HelperMethods.ParseValueToDouble(previousQty));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalH", HelperMethods.ParseSAPValueToDouble(QCTotalH.Value) - HelperMethods.ParseValueToDouble(previousQty));
+
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSCF", HelperMethods.ParseSAPValueToDouble(QCTotalSCF.Value) + HelperMethods.ParseValueToDouble(newCost));
+                    HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSC", HelperMethods.ParseSAPValueToDouble(QCTotalSC.Value) + HelperMethods.ParseValueToDouble(newCost));
+
+                }
+            }
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", HelperMethods.ParseSAPValueToDouble(QCTEst.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
         }
 
-        internal static void OperationsTotalCosts(IForm uIAPIRawForm)
+        internal static void OperationsCalcTotal(IForm uIAPIRawForm)
         {
-            var myTotalOperationsCost = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific;
-            var myTotalOtherCost = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOTCost").Specific;
+            double totalop = 0;
+            double totalsub = 0;
+            double totalqty = 0;
+            double totalOC = 0;
 
-            double operationsCost = HelperMethods.ParseSAPValueToDouble(myTotalOperationsCost.Value);
-            double otherCost = HelperMethods.ParseSAPValueToDouble(myTotalOtherCost.Value);
-            double total = operationsCost + otherCost;
-
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", total);
-        }
-
-        internal static double OperationsTotalHours(IForm uIAPIRawForm)
-        {
-            double total = 0;
             var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
 
             for (int i = 1; i <= mOperations.RowCount; i++)
@@ -913,44 +954,31 @@ namespace STXGen2
                 var opRescValue = ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString();
                 if (!opRescValue.StartsWith("SUBCON"))
                 {
-                    var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
-                    total += HelperMethods.ParseValueToDouble(optotalCell.Value);
+                    var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                    totalop += HelperMethods.ParseValueToDouble(optotalCell.Value);
+
+                    var qtytotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
+                    totalqty += HelperMethods.ParseValueToDouble(qtytotalCell.Value);
                 }
-            }
-
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalH", total);
-            return total;
-        }
-
-        internal static void OperationsTotalHoursFilter(IForm uIAPIRawForm, string selectedValue)
-        {
-            double total = 0;
-            var mOperations = HelperMethods.GetMatrix(uIAPIRawForm, "mOper");
-
-            if (selectedValue != "-1")
-            {
-                for (int i = 1; i <= mOperations.RowCount; i++)
+                else
                 {
-                    var opRescValue = ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString();
-                    if (opRescValue == selectedValue && !opRescValue.StartsWith("SUBCON"))
-                    {
-                        var optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(i).Specific;
-                        total += HelperMethods.ParseValueToDouble(optotalCell.Value);
-                    }
+                    var subtotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
+                    totalsub += HelperMethods.ParseValueToDouble(subtotalCell.Value);
                 }
-            }
-            else
-            {
-                total = OperationsTotalHours(uIAPIRawForm); // Use the previously created method instead of repeating code
+
             }
 
-            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", total);
-        }
 
-        internal static void mtxLineDataRecalculation(IForm uIAPIRawForm, EditText opResc, EditText opNewQty, string previousQty, string newCost, string previousLineTotal)
-        {
-            SAPbouiCOM.EditText QCOPTot = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCOPTot").Specific;
-            HelperMethods.UpdateEditText(uIAPIRawForm,"QCOPTot", HelperMethods.ParseSAPValueToDouble(QCOPTot.Value) - HelperMethods.ParseValueToDouble(previousLineTotal) + HelperMethods.ParseValueToDouble(newCost));
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOPTot", totalop);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOpA", totalop);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSCF", totalsub);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalSC", totalsub);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCOTCost", totalOC);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalH", totalqty);
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTotalHF", totalqty);
+
+            HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", totalop + totalOC + totalsub);
+
         }
     }
 }

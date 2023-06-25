@@ -91,6 +91,16 @@ namespace STXGen2
                     oForm.EnableMenu("1293", eventInfo.Row > 0);
                 }
 
+                if (eventInfo.FormUID == oForm.UniqueID && eventInfo.ItemUID == "mOper" && eventInfo.EventType == BoEventTypes.et_RIGHT_CLICK && eventInfo.BeforeAction)
+                {
+                    BubbleEvent = false;
+                    oForm.EnableMenu("772", true);
+                    oForm.EnableMenu("784", true);
+                    oForm.EnableMenu("1292", true);
+                    oForm.EnableMenu("1293", eventInfo.Row > 0);
+                    oForm.EnableMenu("1294", eventInfo.Row > 0);
+                }
+
             }
             catch (Exception ex)
             {
