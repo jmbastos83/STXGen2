@@ -1,5 +1,8 @@
 ﻿using SAPbouiCOM;
+using System.Drawing;
 using System.Globalization;
+using System.IO;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 namespace STXGen2
@@ -26,6 +29,32 @@ namespace STXGen2
         internal static double ParseDoubleWCur(string value, NumberFormatInfo numberFormat)
         {
             return double.Parse(Regex.Replace((string.IsNullOrEmpty(value) ? "0" : value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, numberFormat);
+
+        }
+        internal static string FormatValueCur(double value, string currency)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            return $"{value.ToString("#,0.00", sapNumberFormat)} {currency}";
+        }
+
+        internal static string GetAndSaveImage(string imageName)
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            string prefix = "STXGen2.Properties.";
+            string resourceName = prefix + imageName;
+
+            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
+            {
+                if (stream != null)
+                {
+                    Image image = Image.FromStream(stream);
+                    string imagePath = Path.Combine(Path.GetTempPath(), imageName);
+                    image.Save(imagePath);
+                    return imagePath;
+                }
+            }
+
+            return string.Empty;
         }
     }
 }

@@ -339,9 +339,10 @@ namespace STXGen2
                 descr = (string)rs.Fields.Item("Part Name").Value;
             }
 
+            QuoteCalculator.parttDescr = descr;
             descr = descr + ": ";
 
-            string newQCSubPart = qCSubPart.String.Substring(0, qCSubPart.String.Length - 2) + "00";
+            string newQCSubPart = qCSubPart.String.Length > 2 ? qCSubPart.String.Substring(0, qCSubPart.String.Length - 2) + "00": qCSubPart.String + "00";
             string sSql2 = $"SELECT T0.\"ItemCode\", T0.\"ItemName\" as \"Part Name\" FROM OITM T0 WHERE T0.\"ItemCode\" like '{newQCSubPart}'";
 
             Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;

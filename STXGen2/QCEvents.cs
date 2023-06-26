@@ -30,32 +30,83 @@ namespace STXGen2
         public static SAPbouiCOM.DataTable operations { get; set; }
 
 
-        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedMatrixRow)
+        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedRow)
         {
-            throw new NotImplementedException();
+            if (operationsMatrix.RowCount == 0 || selectedRow == operationsMatrix.RowCount)
+            {
+                operationsMatrix.AddRow();
+                operationsMatrix.ClearRowData(selectedRow + 1);
+
+                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
+
+                oDBDataSource.InsertRecord(selectedRow);
+                oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
+
+                operationsMatrix.LoadFromDataSource();
+
+            }
+            else
+            {
+
+            }
+        }
+
+        private static void AddRowToDataSource(SAPbouiCOM.Form oForm, SAPbouiCOM.DBDataSource oDBDataSource, int selectedRow)
+        {
+            oDBDataSource.InsertRecord(selectedRow);
+            oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
+        }
+
+        private static List<Dictionary<int, string>> StoreRowData(SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
+        {
+            List<Dictionary<int, string>> rowsData = new List<Dictionary<int, string>>();
+
+            for (int rowIndex = selectedRow + 1; rowIndex <= texturesMatrix.RowCount; rowIndex++)
+            {
+                rowsData.Add(new Dictionary<int, string>());
+
+                for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
+                {
+                    var cell = texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex).Specific;
+                    if (cell is SAPbouiCOM.EditText editText)
+                    {
+                        if (texturesMatrix.Columns.Item(colIndex).UniqueID == "#")
+                            rowsData[rowIndex - (selectedRow + 1)][colIndex] = (int.Parse(editText.Value) + 1).ToString();
+                        else
+                            rowsData[rowIndex - (selectedRow + 1)][colIndex] = editText.Value.ToString();
+                    }
+                    else if (cell is SAPbouiCOM.LinkedButton linkButton)
+                    {
+                        rowsData[rowIndex - (selectedRow + 1)][colIndex] = ((SAPbouiCOM.EditText)linkButton.Item.Specific).Value;
+                    }
+                    else if (cell is SAPbouiCOM.ComboBox comboBox)
+                    {
+                        rowsData[rowIndex - (selectedRow + 1)][colIndex] = comboBox.Selected?.Value.ToString();
+                    }
+                }
+            }
+
+            return rowsData;
         }
 
         public static void AddLineToTexturesMatrix(SAPbouiCOM.Form oForm, SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
         {
             oForm.Freeze(true);
 
+            SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
+
             if (texturesMatrix.RowCount == 5)
             {
                 Program.SBO_Application.SetStatusBarMessage("Maximum number of textures reached.", BoMessageTime.bmt_Medium, false);
                 return;
             }
+
             if (texturesMatrix.RowCount == 0 || selectedRow == texturesMatrix.RowCount)
             {
                 texturesMatrix.AddRow();
                 texturesMatrix.ClearRowData(selectedRow + 1);
-
-                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
-
-                oDBDataSource.InsertRecord(selectedRow);
-                oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
-
+                AddRowToDataSource(oForm, oDBDataSource, selectedRow);
                 texturesMatrix.LoadFromDataSource();
-
             }
             else
             {
@@ -64,95 +115,57 @@ namespace STXGen2
                     selectedRow = texturesMatrix.RowCount;
                 }
 
-                //Console.WriteLine($"Selected row: {selectedRow}");
-                //Console.WriteLine($"Matrix row count: {texturesMatrix.RowCount}");
-
                 if (texturesMatrix.RowCount < 5)
                 {
-                    // Store the values of the rows to be moved down
-                    List<Dictionary<int, string>> rowsData = new List<Dictionary<int, string>>();
-                    for (int rowIndex = selectedRow + 1; rowIndex <= texturesMatrix.RowCount; rowIndex++)
-                    {
-                        //Console.WriteLine($"Storing row: {rowIndex}");
-                        rowsData.Add(new Dictionary<int, string>());
-                        for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
-                        {
-                            var cell = texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex).Specific;
-                            if (cell is SAPbouiCOM.EditText editText)
-                            {
-                                if (texturesMatrix.Columns.Item(colIndex).UniqueID == "#")
-                                {
-                                    rowsData[rowIndex - (selectedRow + 1)][colIndex] = (int.Parse(editText.Value) + 1).ToString();
-                                }
-                                else
-                                {
-                                    rowsData[rowIndex - (selectedRow + 1)][colIndex] = editText.Value.ToString();
-                                }
-
-                            }
-                            if (cell is SAPbouiCOM.LinkedButton linkButton)
-                            {
-                                rowsData[rowIndex - (selectedRow + 1)][colIndex] = ((SAPbouiCOM.EditText)linkButton.Item.Specific).Value;
-                            }
-                            if (cell is SAPbouiCOM.ComboBox comboBox)
-                            {
-                                rowsData[rowIndex - (selectedRow + 1)][colIndex] = comboBox.Selected.Value.ToString();
-                            }
-                        }
-                    }
-
-                    // Add a new row in the data source
-                    SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
+                    List<Dictionary<int, string>> rowsData = StoreRowData(texturesMatrix, selectedRow);
 
                     oDBDataSource.InsertRecord(selectedRow + 1);
                     oDBDataSource.SetValue("VisOrder", selectedRow + 1, (selectedRow + 1).ToString());
 
-
-                    // Set the LineID value to the max LineID + 1
                     int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxMaxLineID;
                     oDBDataSource.SetValue("LineID", selectedRow + 1, (maxLineID + 1).ToString());
                     QuoteCalculator.mtxMaxLineID = maxLineID + 1;
 
-                    // Refresh the matrix
                     texturesMatrix.LoadFromDataSource();
 
                     texturesMatrix.ClearRowData(selectedRow + 1);
-
                     texturesMatrix.FlushToDataSource();
 
-
-
-                    for (int rowIndex = 0; rowIndex < rowsData.Count; rowIndex++)
-                    {
-
-                        //Console.WriteLine($"Restoring row: {rowIndex}");
-                        for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
-                        {
-                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_EDIT)
-                            {
-                                ((SAPbouiCOM.EditText)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Value = rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "";
-                                if (colIndex == 0)
-                                {
-                                    texturesMatrix.FlushToDataSource();
-                                }
-                            }
-                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_COMBO_BOX)
-                            {
-                                ((SAPbouiCOM.ComboBox)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Select(rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "0", BoSearchKey.psk_ByValue);
-                            }
-                            if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_LINKED_BUTTON)
-                            {
-                                oDBDataSource.SetValue("U_Texture", (rowIndex + (selectedRow + 1)), rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "");
-                                texturesMatrix.LoadFromDataSource();
-                            }
-                        }
-
-                    }
+                    RestoreRowData(texturesMatrix, rowsData, selectedRow, oDBDataSource);
                     texturesMatrix.SetCellFocus(selectedRow, 1);
                 }
             }
+
             oForm.Freeze(false);
         }
+
+        private static void RestoreRowData(SAPbouiCOM.Matrix texturesMatrix, List<Dictionary<int, string>> rowsData, int selectedRow, SAPbouiCOM.DBDataSource oDBDataSource)
+        {
+            for (int rowIndex = 0; rowIndex < rowsData.Count; rowIndex++)
+            {
+                for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
+                {
+                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_EDIT)
+                    {
+                        ((SAPbouiCOM.EditText)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Value = rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "";
+                        if (colIndex == 0)
+                        {
+                            texturesMatrix.FlushToDataSource();
+                        }
+                    }
+                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_COMBO_BOX)
+                    {
+                        ((SAPbouiCOM.ComboBox)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Select(rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "0", BoSearchKey.psk_ByValue);
+                    }
+                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_LINKED_BUTTON)
+                    {
+                        oDBDataSource.SetValue("U_Texture", (rowIndex + (selectedRow + 1)), rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "");
+                        texturesMatrix.LoadFromDataSource();
+                    }
+                }
+            }
+        }
+
 
         internal static void FillTextureClass(IForm uIAPIRawForm)
         {
@@ -287,7 +300,7 @@ namespace STXGen2
         internal static string SellMarginImage(IForm uIAPIRawForm)
         {
             System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
-
+            string resourceName = "";
             double compPrice = 0;
             double compCost = 0;
             string DocCur = ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCDocCur").Specific).Value;
@@ -297,24 +310,17 @@ namespace STXGen2
 
             if (Utils.MainCurrency != DocCur)
             {
-                compPrice = HelperMethods.ParseDoubleWCur(LCPrice, sapNumberFormat); //double.Parse(Regex.Replace((string.IsNullOrEmpty(LCPrice) ? "0" : LCPrice), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                compPrice = HelperMethods.ParseDoubleWCur(LCPrice, sapNumberFormat);
 
             }
             else
             {
-                compPrice = HelperMethods.ParseDoubleWCur(Price, sapNumberFormat); //double.Parse(Regex.Replace((string.IsNullOrEmpty(Price) ? "0" : Price), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                compPrice = HelperMethods.ParseDoubleWCur(Price, sapNumberFormat);
             }
 
             compCost = double.Parse(Cost, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
 
-            string imagePath = "";
-            string imageName = "";
-
-            Assembly assembly = Assembly.GetExecutingAssembly();
-            string resourceName = "";
-            string prefix = "STXGen2.Properties.";
-
-
+            
             // Your condition to choose the image
             if (compCost < compPrice)
             {
@@ -329,21 +335,9 @@ namespace STXGen2
                 resourceName = "Light-red.jpg";
             }
 
-            imageName = resourceName;
-            resourceName = prefix + resourceName;
-
-            using (Stream stream = assembly.GetManifestResourceStream(resourceName))
-            {
-                if (stream != null)
-                {
-
-                    Image image = Image.FromStream(stream);
-                    imagePath = Path.GetTempPath() + imageName;
-                    image.Save(imagePath);
-                }
-            }
-
+            string imagePath = HelperMethods.GetAndSaveImage(resourceName);
             return imagePath;
+
         }
 
         internal static List<Dictionary<string, string>> GetAllValuesFromMatrix1(Matrix mTextures)
@@ -469,6 +463,7 @@ namespace STXGen2
 
             // Update the value via the user data source
             oDS.Value = spt;
+            //QuoteCalculator.parttDescr = descr;
             PartDescr.Value = descr;
 
             uIAPIRawForm.Freeze(false);

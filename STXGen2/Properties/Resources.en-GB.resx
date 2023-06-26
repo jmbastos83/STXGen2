@@ -122,16 +122,15 @@
   </data>
   <data name="mOperErr1" xml:space="preserve">
     <value>Resource is inactive or does not exist.</value>
-    <comment> </comment>
   </data>
   <data name="mOperErr2" xml:space="preserve">
     <value>Operation does not exist. Please contact SAP administrators.</value>
   </data>
   <data name="mOperErr3" xml:space="preserve">
-    <value>Missing the coverage area dimension.</value>
+    <value>Coverage area missing.</value>
   </data>
   <data name="mOperErr4" xml:space="preserve">
-    <value>Resource doesnt have a cost amount. Please contact Finance department.</value>
+    <value>Selected resource has no associated cost. Contact the Finance department.</value>
   </data>
   <data name="Msg1" xml:space="preserve">
     <value>Hello World</value>
