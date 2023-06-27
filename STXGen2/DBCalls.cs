@@ -117,6 +117,21 @@ namespace STXGen2
             return maxLineID;
         }
 
+        internal static int GetMatrixOPLastLineID(string qCDocEntry)
+        {
+            int maxLineID = 0;
+
+            string sSql = $"select max(\"LineID\") as \"LineId\" from \"@STXQC19O\" where \"DocEntry\" = '{qCDocEntry}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+            if (!rs.EoF)
+            {
+                maxLineID = (int)rs.Fields.Item("LineId").Value;
+            }
+
+            return maxLineID;
+        }
+
         internal static void GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM)
         {
 

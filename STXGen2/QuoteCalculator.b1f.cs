@@ -14,6 +14,7 @@ using System.Windows.Forms;
 using SAPbobsCOM;
 using SAPbouiCOM;
 using SAPbouiCOM.Framework;
+using System.Xml;
 
 namespace STXGen2
 {
@@ -46,6 +47,8 @@ namespace STXGen2
         public static bool recalcConfirm { get; set; }
         public bool lostFocusCovA { get; private set; }
         public string subparttDescr { get; private set; }
+        public static int mtxOMaxLineID { get; set; }
+        public static string mOperatinsListXML { get; set; }
 
         private SAPbouiCOM.EditText QCDocEntry;
         private SAPbouiCOM.EditText QCItemCode;
@@ -264,6 +267,7 @@ namespace STXGen2
             this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
             this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
+            this.mOperations.MatrixLoadAfter += new SAPbouiCOM._IMatrixEvents_MatrixLoadAfterEventHandler(this.mOperations_MatrixLoadAfter);
             this.mOperations.ChooseFromListBefore += new SAPbouiCOM._IMatrixEvents_ChooseFromListBeforeEventHandler(this.mOperations_ChooseFromListBefore);
             this.mOperations.DoubleClickAfter += new SAPbouiCOM._IMatrixEvents_DoubleClickAfterEventHandler(this.mOperations_DoubleClickAfter);
             this.mOperations.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mOperations_ChooseFromListAfter);
@@ -305,6 +309,8 @@ namespace STXGen2
         {
             try
             {
+                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
+
                 this.UIAPIRawForm.Freeze(true);
 
                 SetFormModeToFind();
@@ -314,6 +320,7 @@ namespace STXGen2
                 SetButtonValidValues();
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
+                mOperatinsListXML = oDBDataSource.GetAsXML();
                 this.Show();
             }
             catch (Exception ex)
@@ -1051,6 +1058,7 @@ namespace STXGen2
 
         private void BtnGetOPC_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
+
             int noperations = mOperations.RowCount;
             switch (lastBtnOpselection)
             {
@@ -1568,6 +1576,7 @@ namespace STXGen2
             if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPResc" && pVal.ActionSuccess == true)
             {
                 string resCode = "";
+                string resCodeN = "";
                 SAPbouiCOM.EditText resource = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(pVal.Row).Specific;
                 SAPbouiCOM.EditText resCost = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPCost").Cells.Item(pVal.Row).Specific;
                 SAPbouiCOM.EditText resQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
@@ -1583,19 +1592,37 @@ namespace STXGen2
                 if (selectedDataTable != null && selectedDataTable.Rows.Count > 0)
                 {
                     resCode = selectedDataTable.GetValue("VisResCode", 0).ToString();
+                    resCodeN = selectedDataTable.GetValue("ResName", 0).ToString();
 
                 }
                 string subCost = DBCalls.ResCost(resCode);
 
                 this.UIAPIRawForm.Freeze(true);
-                resource.Value = resCode;
-                resCost.Value = subCost;
+
+                if (QCEvents.operations == null)
+                {
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPResc", resCode);
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPResN", resCodeN);
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPCost", subCost);
+                }
+                else
+                {
+                    resource.Value = resCode;
+                    resCost.Value = subCost;
+                }
 
                 double subCostValue, resQtyValue;
 
                 if (double.TryParse(subCost, NumberStyles.Any, CultureInfo.InvariantCulture, out subCostValue) && double.TryParse(resQty.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out resQtyValue))
                 {
-                    totalResc.Value = (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture);
+                    if (QCEvents.operations == null)
+                    {
+                        mOperations.SetCellWithoutValidation(pVal.Row, "OPTotal", (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture));
+                    }
+                    else
+                    {
+                        totalResc.Value = (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture);
+                    }
                 }
                 mOperations.FlushToDataSource();
                 mOperations.LoadFromDataSource();
@@ -1713,6 +1740,21 @@ namespace STXGen2
                 //QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusCovA = true;
             }
+        }
+
+        private void mOperations_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            try
+            {
+                mtxOMaxLineID = DBCalls.GetMatrixOPLastLineID(QCDocEntry.Value);
+
+            }
+            catch (Exception ex)
+            {
+
+                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, false);
+            }
+
         }
     }
 }
