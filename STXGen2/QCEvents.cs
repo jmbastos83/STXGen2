@@ -23,6 +23,7 @@ namespace STXGen2
         public readonly object MatrixLock = new object();
         public static bool _processChooseFromList = false;
         public static Dictionary<int, string> _pendingCFLUpdates = new Dictionary<int, string>();
+        private static string xmlOperations;
 
         public static string defValue { get; set; }
         public static object QCLength { get; private set; }
@@ -94,102 +95,10 @@ namespace STXGen2
             }
             else
             {
-                if (operations != null)
-                {
-
-                    // Get the XML representation of the DataTable.
-                    string xmlData = operations.SerializeAsXML(BoDataTableXmlSelect.dxs_DataOnly);
-
-
-                    // Load the XML into an XmlDocument for easier manipulation.
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(xmlData);
-
-                    // Navigate to the rows of the data source.
-                    XmlNodeList rows = xmlDoc.GetElementsByTagName("Row");
-
-
-                    // Get selected row. Note that rows in XmlNodeList are 0-based, so subtract 1 from the selectedRow.
-                    XmlNode selectedNode = rows.Item(selectedRow - 1);
-
-                    // Let's say you want to get the value of a cell with ColumnUid 'SomeColumnName'
-                    XmlNode cellValueNode = selectedNode.SelectSingleNode("Cells/Cell[ColumnUid='OPSeq']/Value");
-                    string OP_seq = cellValueNode?.InnerText;
-
-                    cellValueNode = selectedNode.SelectSingleNode("Cells/Cell[ColumnUid='OPTexture']/Value");
-                    string OP_Texture = cellValueNode?.InnerText;
-
-                    if (!string.IsNullOrEmpty(OP_Texture))
-                    {
-                        confirmTOper = Program.SBO_Application.MessageBox("Is the new line related to the texture of the select line?", 1, "Yes", "No") == 1;
-                    }
-
-                    // Create a new XML element for the new row and add the data to it.
-                    XmlElement newRow = xmlDoc.CreateElement("Row");
-
-                    XmlElement cells = xmlDoc.CreateElement("Cells");
-                    newRow.AppendChild(cells);
-
-                    // Add VisOrder cell
-                    XmlElement newCell = xmlDoc.CreateElement("Cell");
-                    XmlElement uidElement = xmlDoc.CreateElement("ColumnUid");
-                    uidElement.InnerText = "#";
-                    newCell.AppendChild(uidElement);
-                    XmlElement valueElement = xmlDoc.CreateElement("Value");
-                    valueElement.InnerText = (selectedRow).ToString(); // replace with the actual new VisOrder
-                    newCell.AppendChild(valueElement);
-                    cells.AppendChild(newCell);
-
-                    if (confirmTOper)
-                    {
-                        newCell = xmlDoc.CreateElement("Cell");
-                        uidElement = xmlDoc.CreateElement("ColumnUid");
-                        uidElement.InnerText = "OPTexture";
-                        newCell.AppendChild(uidElement);
-                        valueElement = xmlDoc.CreateElement("Value");
-                        valueElement.InnerText = (OP_Texture).ToString(); // replace with the actual new VisOrder
-                        newCell.AppendChild(valueElement);
-                        cells.AppendChild(newCell);
-
-                        newCell = xmlDoc.CreateElement("Cell");
-                        uidElement = xmlDoc.CreateElement("ColumnUid");
-                        uidElement.InnerText = "OPSeq";
-                        newCell.AppendChild(uidElement);
-                        valueElement = xmlDoc.CreateElement("Value");
-                        valueElement.InnerText = (OP_seq).ToString(); // replace with the actual new VisOrder
-                        newCell.AppendChild(valueElement);
-                        cells.AppendChild(newCell);
-                    }
-
-                    // Insert the new row at the desired position.
-                    rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
-
-                    // Update the VisOrder for the rest of the rows.
-                    for (int i = selectedRow; i < rows.Count; i++)
-                    {
-                        XmlNode visOrderNode = rows.Item(i).SelectSingleNode("Cells/Cell[ColumnUid='#']/Value");
-                        if (visOrderNode != null)
-                        {
-                            visOrderNode.InnerText = (i + 1).ToString();
-                        }
-                    }
-
-                    // Convert the XmlDocument back to a string.
-                    xmlData = xmlDoc.OuterXml;
-
-                    // Load the updated data back into the DataTable.
-                    operations.LoadSerializedXML(SAPbouiCOM.BoDataTableXmlSelect.dxs_DataOnly, xmlData);
-
-                    // Refresh Matrix.
-                    operationsMatrix.LoadFromDataSource();
-                }
-                else
-                {
-
                     int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxOMaxLineID;
                     // Load the XML into an XmlDocument for easier manipulation.
                     XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(QuoteCalculator.mOperatinsListXML);
+                    xmlDoc.LoadXml(oDBDataSource.GetAsXML());
 
                     // Navigate to the rows of the data source.
                     XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
@@ -225,15 +134,15 @@ namespace STXGen2
                     newCell.AppendChild(valueElement);
                     cells.AppendChild(newCell);
 
-                    // Add LineID cell
-                    newCell = xmlDoc.CreateElement("cell");
-                    uidElement = xmlDoc.CreateElement("uid");
-                    uidElement.InnerText = "LineId";
-                    newCell.AppendChild(uidElement);
-                    valueElement = xmlDoc.CreateElement("value");
-                    valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
-                    newCell.AppendChild(valueElement);
-                    cells.AppendChild(newCell);
+                    //// Add LineID cell
+                    //newCell = xmlDoc.CreateElement("cell");
+                    //uidElement = xmlDoc.CreateElement("uid");
+                    //uidElement.InnerText = "LineId";
+                    //newCell.AppendChild(uidElement);
+                    //valueElement = xmlDoc.CreateElement("value");
+                    //valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
+                    //newCell.AppendChild(valueElement);
+                    //cells.AppendChild(newCell);
 
                     if (confirmTOper)
                     {
@@ -276,18 +185,14 @@ namespace STXGen2
                     oDBDataSource.LoadFromXML(xmlData);
 
                     QuoteCalculator.mtxOMaxLineID = maxLineID + 1;
-
-
-                }
-
             }
 
 
-            if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
-            {
-                oForm.Mode = BoFormMode.fm_UPDATE_MODE;
-            }
-            oForm.Freeze(false);
+            //if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
+            //{
+            //    oForm.Mode = BoFormMode.fm_UPDATE_MODE;
+            //}
+            //oForm.Freeze(false);
         }
 
         private static void AddRowToDataSource(SAPbouiCOM.Form oForm, SAPbouiCOM.DBDataSource oDBDataSource, int selectedRow)
@@ -817,6 +722,8 @@ namespace STXGen2
 
         private static void processMTOperationsList(IForm uIAPIRawForm, Matrix mOperations, List<Dictionary<string, string>> mtTexture)
         {
+            SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)uIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
+
             var (CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression) = QCEvents.GetAdditionalConditions(mtTexture);
 
             // Create a unique identifier for the DataTable
@@ -834,11 +741,11 @@ namespace STXGen2
 
             if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
             {
-                DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
             }
             else
             {
-                DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
             }
 
             int operationscount = operations.Rows.Count;
@@ -848,10 +755,12 @@ namespace STXGen2
                 {
                     uIAPIRawForm.Freeze(true);
 
-                    mOperations.Clear();
+                    //mOperations.Clear();
 
-                    // Bind the DataTable columns to the matrix columns
-                    BindMatrixColumns(mOperations, dataTableID);
+                    oDBDataSource.LoadFromXML(xmlOperations);
+
+                    //// Bind the DataTable columns to the matrix columns
+                    //BindMatrixColumns(mOperations, dataTableID);
 
                     // Bind check boxes using UserDataSources to be able to multiselect
                     BindMatrixCheckboxes(uIAPIRawForm, mOperations, operationscount);

@@ -132,14 +132,14 @@ namespace STXGen2
             return maxLineID;
         }
 
-        internal static void GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM)
+        internal static string GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM)
         {
 
 
             string query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"#\",X0.\"Texture\" as \"OPTexture\",X0.\"U_operationResource\" as \"OPResc\",X0.\"ResName\" as \"OPResN\",X0.\"U_operationCode\" as \"OPcode\",\n" +
-                           "X0.\"U_STXOPDes\" as \"OPName\",X0.\"U_STXOPDesLocal\" as \"OPNameL\",cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5})) as \"OPStdT\",\n" +
-                           "cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5})) as \"OPQtdT\",X0.\"UnitOfMsr\" as \"OPUom\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"OPCost\",\n" +
-                           "cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6})) as \"OPTotal\",\n" +
+                           "X0.\"U_STXOPDes\" as \"OPName\",X0.\"U_STXOPDesLocal\" as \"OPNameL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"OPStdT\",\n" +
+                           "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"OPQtdT\",X0.\"UnitOfMsr\" as \"OPUom\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"OPCost\",\n" +
+                           "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"OPTotal\",\n" +
                            "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"OPErrMsg\",\n" +
                            "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"OPSeq\",'' as \"Dummy\" from(\n" +
                            "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
@@ -186,12 +186,34 @@ namespace STXGen2
             try
             {
                 operations.ExecuteQuery(query);
+                var columnToUidMappings = new Dictionary<string, string>
+                    {
+                        {"#","VisOrder" },
+                        {"OPSeq","U_seq" },
+                        {"OPTexture", "U_Texture" },
+                        {"OPResc", "U_resCode" },
+                        {"OPResN", "U_resName" },
+                        {"OPcode","U_opCode" },
+                        {"OPName","U_opDesc" },
+                        {"OPStdT","U_sugQty" },
+                        {"OPQtdT","U_Quantity" },
+                        {"OPUom","U_UOM" },
+                        {"OPCost","U_Price" },
+                        {"OPTotal","U_LineTot" },
+                        {"OPErrMsg","U_ErrMsg" },
+                        {"OPNameL","U_opDescL" }
+                    };
+                //var xmlDatasource = new XMLDatasource();
+                XMLDatasource.DbDataSources dbDataSources = XMLDatasource.GetDbDataSourcesFromOperation(operations, columnToUidMappings);
+                string xmlOperations = (XMLDatasource.GenerateXml(dbDataSources)).ToString();
+                return xmlOperations;
 
             }
             catch (Exception ex)
             {
 
                 Program.SBO_Application.SetStatusBarMessage(ex.Message);
+                return null;
             }
         }
 
