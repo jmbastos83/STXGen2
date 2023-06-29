@@ -225,6 +225,8 @@ namespace STXGen2
                     if (SAPEvents.lastClickedMatrixUID == "mTextures")
                     {
                         QCEvents.AddLineToTexturesMatrix(oForm, activeMatrix, selectedRow);
+
+
                     }
                     else if (SAPEvents.lastClickedMatrixUID == "mOper")
                     {

@@ -82,6 +82,7 @@ namespace STXGen2
 
         public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedRow)
         {
+            bool confirmTOper = false;
             oForm.Freeze(true);
 
             SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
@@ -95,8 +96,10 @@ namespace STXGen2
             {
                 if (operations != null)
                 {
+
                     // Get the XML representation of the DataTable.
                     string xmlData = operations.SerializeAsXML(BoDataTableXmlSelect.dxs_DataOnly);
+
 
                     // Load the XML into an XmlDocument for easier manipulation.
                     XmlDocument xmlDoc = new XmlDocument();
@@ -104,6 +107,22 @@ namespace STXGen2
 
                     // Navigate to the rows of the data source.
                     XmlNodeList rows = xmlDoc.GetElementsByTagName("Row");
+
+
+                    // Get selected row. Note that rows in XmlNodeList are 0-based, so subtract 1 from the selectedRow.
+                    XmlNode selectedNode = rows.Item(selectedRow - 1);
+
+                    // Let's say you want to get the value of a cell with ColumnUid 'SomeColumnName'
+                    XmlNode cellValueNode = selectedNode.SelectSingleNode("Cells/Cell[ColumnUid='OPSeq']/Value");
+                    string OP_seq = cellValueNode?.InnerText;
+
+                    cellValueNode = selectedNode.SelectSingleNode("Cells/Cell[ColumnUid='OPTexture']/Value");
+                    string OP_Texture = cellValueNode?.InnerText;
+
+                    if (!string.IsNullOrEmpty(OP_Texture))
+                    {
+                        confirmTOper = Program.SBO_Application.MessageBox("Is the new line related to the texture of the select line?", 1, "Yes", "No") == 1;
+                    }
 
                     // Create a new XML element for the new row and add the data to it.
                     XmlElement newRow = xmlDoc.CreateElement("Row");
@@ -120,6 +139,27 @@ namespace STXGen2
                     valueElement.InnerText = (selectedRow).ToString(); // replace with the actual new VisOrder
                     newCell.AppendChild(valueElement);
                     cells.AppendChild(newCell);
+
+                    if (confirmTOper)
+                    {
+                        newCell = xmlDoc.CreateElement("Cell");
+                        uidElement = xmlDoc.CreateElement("ColumnUid");
+                        uidElement.InnerText = "OPTexture";
+                        newCell.AppendChild(uidElement);
+                        valueElement = xmlDoc.CreateElement("Value");
+                        valueElement.InnerText = (OP_Texture).ToString(); // replace with the actual new VisOrder
+                        newCell.AppendChild(valueElement);
+                        cells.AppendChild(newCell);
+
+                        newCell = xmlDoc.CreateElement("Cell");
+                        uidElement = xmlDoc.CreateElement("ColumnUid");
+                        uidElement.InnerText = "OPSeq";
+                        newCell.AppendChild(uidElement);
+                        valueElement = xmlDoc.CreateElement("Value");
+                        valueElement.InnerText = (OP_seq).ToString(); // replace with the actual new VisOrder
+                        newCell.AppendChild(valueElement);
+                        cells.AppendChild(newCell);
+                    }
 
                     // Insert the new row at the desired position.
                     rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
@@ -145,6 +185,7 @@ namespace STXGen2
                 }
                 else
                 {
+
                     int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxOMaxLineID;
                     // Load the XML into an XmlDocument for easier manipulation.
                     XmlDocument xmlDoc = new XmlDocument();
@@ -155,6 +196,21 @@ namespace STXGen2
 
                     // Create a new XML element for the new row and add the data to it.
                     XmlElement newRow = xmlDoc.CreateElement("row");
+
+                    // Get selected row. Note that rows in XmlNodeList are 0-based, so subtract 1 from the selectedRow.
+                    XmlNode selectedNode = rows.Item(selectedRow);
+
+                    // Let's say you want to get the value of a cell with ColumnUid 'SomeColumnName'
+                    XmlNode cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_seq']/value");
+                    string OP_seq = cellValueNode?.InnerText;
+
+                    cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_Texture']/value");
+                    string OP_Texture = cellValueNode?.InnerText;
+
+                    if (!string.IsNullOrEmpty(OP_Texture))
+                    {
+                        confirmTOper = Program.SBO_Application.MessageBox("Is the new line related to the texture of the select line?", 1, "Yes", "No") == 1;
+                    }
 
                     XmlElement cells = xmlDoc.CreateElement("cells");
                     newRow.AppendChild(cells);
@@ -178,6 +234,27 @@ namespace STXGen2
                     valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
                     newCell.AppendChild(valueElement);
                     cells.AppendChild(newCell);
+
+                    if (confirmTOper)
+                    {
+                        newCell = xmlDoc.CreateElement("cell");
+                        uidElement = xmlDoc.CreateElement("uid");
+                        uidElement.InnerText = "U_Texture";
+                        newCell.AppendChild(uidElement);
+                        valueElement = xmlDoc.CreateElement("value");
+                        valueElement.InnerText = (OP_Texture).ToString(); // replace with the actual new VisOrder
+                        newCell.AppendChild(valueElement);
+                        cells.AppendChild(newCell);
+
+                        newCell = xmlDoc.CreateElement("cell");
+                        uidElement = xmlDoc.CreateElement("uid");
+                        uidElement.InnerText = "U_seq";
+                        newCell.AppendChild(uidElement);
+                        valueElement = xmlDoc.CreateElement("value");
+                        valueElement.InnerText = (OP_seq).ToString(); // replace with the actual new VisOrder
+                        newCell.AppendChild(valueElement);
+                        cells.AppendChild(newCell);
+                    }
 
                     // Insert the new row at the desired position.
                     rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
@@ -819,12 +896,11 @@ namespace STXGen2
 
         private static void BindMatrixColumns(Matrix mOperations, string dataTableID)
         {
-            string[] columnsToBind = new[] { "#", "OPTexture", "OPResc", "OPResN", "OPcode", "OPName", "OPNameL", "OPStdT", "OPQtdT", "OPUom", "OPCost", "OPTotal", "OPErrMsg", "OPSeq" };
 
+            string[] columnsToBind = new[] { "#", "OPTexture", "OPResc", "OPResN", "OPcode", "OPName", "OPNameL", "OPStdT", "OPQtdT", "OPUom", "OPCost", "OPTotal", "OPErrMsg", "OPSeq" };
             foreach (string column in columnsToBind)
             {
-                mOperations.Columns.Item(column).DataBind.Bind(dataTableID, column);
-
+                    mOperations.Columns.Item(column).DataBind.Bind(dataTableID, column);
             }
         }
 
