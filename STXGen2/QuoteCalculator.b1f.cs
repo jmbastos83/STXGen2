@@ -320,6 +320,7 @@ namespace STXGen2
                 SetButtonValidValues();
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
+                BindLinkedButtonToMatrixColumn(this.mOperations);
                 mOperatinsListXML = oDBDataSource.GetAsXML();
                 this.Show();
             }
@@ -1740,6 +1741,17 @@ namespace STXGen2
                 //QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusCovA = true;
             }
+        }
+        private void BindLinkedButtonToMatrixColumn(Matrix mOperations)
+        {
+            // Get the column you want to bind the LinkedButton to
+            Column column = mOperations.Columns.Item("OPResc");
+
+            // Cast the column as a LinkedButton
+            LinkedButton linkedButton = (LinkedButton)column.ExtendedObject;
+
+            // Specify the LinkedObject type
+            linkedButton.LinkedObjectType = "290";
         }
 
         private void mOperations_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
