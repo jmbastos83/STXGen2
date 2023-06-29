@@ -310,6 +310,7 @@ namespace STXGen2
             try
             {
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
+
                 this.UIAPIRawForm.Freeze(true);
 
                 SetFormModeToFind();
@@ -319,7 +320,6 @@ namespace STXGen2
                 SetButtonValidValues();
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
-                MatrixSorting();
                 mOperatinsListXML = oDBDataSource.GetAsXML();
                 this.Show();
             }
@@ -334,18 +334,6 @@ namespace STXGen2
                 this.UIAPIRawForm.Freeze(false);
             }
         }
-
-        private void MatrixSorting()
-        {
-            mTextures.Columns.Item("#").TitleObject.Sortable = true;
-            mTextures.Columns.Item("#").TitleObject.Sort(BoGridSortType.gst_Ascending);
-            mTextures.Columns.Item("#").TitleObject.Sortable = false;
-
-            mOperations.Columns.Item("#").TitleObject.Sortable = true;
-            mOperations.Columns.Item("#").TitleObject.Sort(BoGridSortType.gst_Ascending);
-            mOperations.Columns.Item("#").TitleObject.Sortable = false;
-        }
-
         private void LoadDocumentAndBindMatrix(string qcid)
         {
             // Enable QCDocEntry field temporarily
