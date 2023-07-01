@@ -23,7 +23,7 @@ namespace STXGen2
         public readonly object MatrixLock = new object();
         public static bool _processChooseFromList = false;
         public static Dictionary<int, string> _pendingCFLUpdates = new Dictionary<int, string>();
-        private static string xmlOperations;
+        private static string xmlOperations = "";
 
         public static string defValue { get; set; }
         public static object QCLength { get; private set; }
@@ -134,17 +134,17 @@ namespace STXGen2
                     newCell.AppendChild(valueElement);
                     cells.AppendChild(newCell);
 
-                    //// Add LineID cell
-                    //newCell = xmlDoc.CreateElement("cell");
-                    //uidElement = xmlDoc.CreateElement("uid");
-                    //uidElement.InnerText = "LineId";
-                    //newCell.AppendChild(uidElement);
-                    //valueElement = xmlDoc.CreateElement("value");
-                    //valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
-                    //newCell.AppendChild(valueElement);
-                    //cells.AppendChild(newCell);
+                    // Add LineID cell
+                    newCell = xmlDoc.CreateElement("cell");
+                    uidElement = xmlDoc.CreateElement("uid");
+                    uidElement.InnerText = "LineId";
+                    newCell.AppendChild(uidElement);
+                    valueElement = xmlDoc.CreateElement("value");
+                    valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
+                    newCell.AppendChild(valueElement);
+                    cells.AppendChild(newCell);
 
-                    if (confirmTOper)
+                if (confirmTOper)
                     {
                         newCell = xmlDoc.CreateElement("cell");
                         uidElement = xmlDoc.CreateElement("uid");
@@ -188,11 +188,11 @@ namespace STXGen2
             }
 
 
-            //if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
-            //{
-            //    oForm.Mode = BoFormMode.fm_UPDATE_MODE;
-            //}
-            //oForm.Freeze(false);
+            if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
+            {
+                oForm.Mode = BoFormMode.fm_UPDATE_MODE;
+            }
+            oForm.Freeze(false);
         }
 
         private static void AddRowToDataSource(SAPbouiCOM.Form oForm, SAPbouiCOM.DBDataSource oDBDataSource, int selectedRow)
@@ -755,12 +755,9 @@ namespace STXGen2
                 {
                     uIAPIRawForm.Freeze(true);
 
-                    //mOperations.Clear();
-
+                    mOperations.Clear();
+                    
                     oDBDataSource.LoadFromXML(xmlOperations);
-
-                    //// Bind the DataTable columns to the matrix columns
-                    //BindMatrixColumns(mOperations, dataTableID);
 
                     // Bind check boxes using UserDataSources to be able to multiselect
                     BindMatrixCheckboxes(uIAPIRawForm, mOperations, operationscount);
@@ -1077,5 +1074,6 @@ namespace STXGen2
             HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", totalop + totalOC + totalsub);
 
         }
+
     }
 }

@@ -320,7 +320,7 @@ namespace STXGen2
                 SetButtonValidValues();
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
-                BindLinkedButtonToMatrixColumn(this.mOperations);
+                MatrixSorting();
                 mOperatinsListXML = oDBDataSource.GetAsXML();
                 this.Show();
             }
@@ -335,6 +335,18 @@ namespace STXGen2
                 this.UIAPIRawForm.Freeze(false);
             }
         }
+
+        private void MatrixSorting()
+        {
+            mTextures.Columns.Item("#").TitleObject.Sortable = true;
+            mTextures.Columns.Item("#").TitleObject.Sort(BoGridSortType.gst_Ascending);
+            mTextures.Columns.Item("#").TitleObject.Sortable = false;
+
+            mOperations.Columns.Item("#").TitleObject.Sortable = true;
+            mOperations.Columns.Item("#").TitleObject.Sort(BoGridSortType.gst_Ascending);
+            mOperations.Columns.Item("#").TitleObject.Sortable = false;
+        }
+
         private void LoadDocumentAndBindMatrix(string qcid)
         {
             // Enable QCDocEntry field temporarily
@@ -784,23 +796,31 @@ namespace STXGen2
         private void ButtonOk_PressedBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
+
+            if (pVal.FormMode == 2)
+            {
+                for (int i = 1; i <= mOperations.RowCount; i++)
+                {
+                    SAPbouiCOM.EditText cellvalue = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPErrMsg").Cells.Item(i).Specific;
+                    if (!string.IsNullOrEmpty(cellvalue.Value))
+                    {
+                        SAPbouiCOM.Framework.Application.SBO_Application.StatusBar.SetText("Please correct all the errors on the operations matrix before proceding...", SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
+                        BubbleEvent = false; // This will prevent the event from propagating further
+                        return;
+                    }
+                }
+                mOperations.FlushToDataSource();
+            }
+
             ToolImg.Picture = Path.GetFileName(ToolImg.Picture);
 
-            for (int i = 1; i <= mOperations.RowCount; i++)
-            {
-                SAPbouiCOM.EditText cellvalue = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPErrMsg").Cells.Item(i).Specific;
-                if (!string.IsNullOrEmpty(cellvalue.Value))
-                {
-                    SAPbouiCOM.Framework.Application.SBO_Application.StatusBar.SetText("Please correct all the errors on the operations matrix before proceding...", SAPbouiCOM.BoMessageTime.bmt_Short, SAPbouiCOM.BoStatusBarMessageType.smt_Error);
-                    BubbleEvent = false; // This will prevent the event from propagating further
-                    return;
-                }
-            }
+            
         }
 
 
         private void ButtonOk_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
+            
             if (File.Exists(Path.Combine(!Directory.Exists(Path.Combine(Utils.oCompany.BitMapPath, "Tools Images")) ? Utils.oCompany.BitMapPath : Path.Combine(Utils.oCompany.BitMapPath, "Tools Images"), ToolImg.Picture)))
             {
                 ToolImg.Picture = Path.Combine(!Directory.Exists(Path.Combine(Utils.oCompany.BitMapPath, "Tools Images")) ? Utils.oCompany.BitMapPath : Path.Combine(Utils.oCompany.BitMapPath, "Tools Images"), ToolImg.Picture);
@@ -1170,21 +1190,6 @@ namespace STXGen2
 
             QuoteCalculator.mtxMaxLineID = 0;
             selectedMatrixRow = -1;
-
-            if (pVal.FormMode != 2 && QCEvents.operationsUpdate == true)
-            {
-                SAPbouiCOM.DataTable mOperations = QCEvents.operations;
-                string qCDocEntry = this.QCDocEntry.Value;
-
-                // Convert the SAPbouiCOM.DataTable to a .NET DataTable object for thread usage
-                System.Data.DataTable mOperationsConverted = ConvertToDataTable(mOperations);
-
-                Thread updateThread = new Thread(() => DBCalls.UpdateOperationsDB(mOperationsConverted, qCDocEntry));
-                updateThread.Start();
-
-            }
-            QCEvents.operationsUpdate = false;
-
         }
 
         private System.Data.DataTable ConvertToDataTable(SAPbouiCOM.DataTable sapDataTable)
@@ -1373,38 +1378,45 @@ namespace STXGen2
 
         private void RemoveCheckedRowsFromMatrix(Matrix mOperations)
         {
-            this.UIAPIRawForm.Freeze(true);
-
-            // Iterate through the rows in reverse order
-            for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
+            try
             {
-                // Get the value of the "OPcheck" column for the current row
-                SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
 
-                // Check if the checkbox is checked
-                if (checkBox.Checked)
+
+                this.UIAPIRawForm.Freeze(true);
+                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
+
+                // Iterate through the rows in reverse order
+                for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
                 {
-                    // Remove the row from the matrix
-                    mOperations.DeleteRow(rowIndex);
-                    if (rowIndex <= mOperations.RowCount)
+                    // Get the value of the "OPcheck" column for the current row
+                    SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
+
+                    // Check if the checkbox is checked
+                    if (checkBox.Checked)
                     {
-                        mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                        // Remove the row from the data source
+                        oDBDataSource.RemoveRecord(rowIndex - 1);
+
+                        if (rowIndex <= mOperations.RowCount)
+                        {
+                            mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                        }
                     }
-                    // Add the index to the set of deleted rows
-                    QCEvents.deletedRows.Add(rowIndex);
                 }
-            }
 
-            // Update the VisOrder column for the remaining rows
-            for (int rowIndex = 1; rowIndex <= mOperations.RowCount; rowIndex++)
+                // Update the # aka LineID column
+                for (int i = 0; i < oDBDataSource.Size; i++)
+                {
+                    oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
+                }
+
+                mOperations.LoadFromDataSource();
+            }
+            finally
             {
-                ((SAPbouiCOM.EditText)mOperations.Columns.Item("#").Cells.Item(rowIndex).Specific).Value = rowIndex.ToString();
-
+                this.UIAPIRawForm.Freeze(false);
+                this.UIAPIRawForm.Update();
             }
-            // Synchronize the matrix data with the data source
-            mOperations.FlushToDataSource();
-
-            this.UIAPIRawForm.Freeze(false);
         }
 
         private void QCHeight_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
@@ -1742,17 +1754,17 @@ namespace STXGen2
                 lostFocusCovA = true;
             }
         }
-        private void BindLinkedButtonToMatrixColumn(Matrix mOperations)
-        {
-            // Get the column you want to bind the LinkedButton to
-            Column column = mOperations.Columns.Item("OPResc");
+        //private void BindLinkedButtonToMatrixColumn(Matrix mOperations)
+        //{
+        //    // Get the column you want to bind the LinkedButton to
+        //    Column column = mOperations.Columns.Item("OPResc");
 
-            // Cast the column as a LinkedButton
-            LinkedButton linkedButton = (LinkedButton)column.ExtendedObject;
+        //    // Cast the column as a LinkedButton
+        //    LinkedButton linkedButton = (LinkedButton)column.ExtendedObject;
 
-            // Specify the LinkedObject type
-            linkedButton.LinkedObjectType = "290";
-        }
+        //    // Specify the LinkedObject type
+        //    linkedButton.LinkedObjectType = "290";
+        //}
 
         private void mOperations_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
         {

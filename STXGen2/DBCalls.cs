@@ -136,12 +136,12 @@ namespace STXGen2
         {
 
 
-            string query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"#\",X0.\"Texture\" as \"OPTexture\",X0.\"U_operationResource\" as \"OPResc\",X0.\"ResName\" as \"OPResN\",X0.\"U_operationCode\" as \"OPcode\",\n" +
-                           "X0.\"U_STXOPDes\" as \"OPName\",X0.\"U_STXOPDesLocal\" as \"OPNameL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"OPStdT\",\n" +
-                           "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"OPQtdT\",X0.\"UnitOfMsr\" as \"OPUom\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"OPCost\",\n" +
-                           "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"OPTotal\",\n" +
-                           "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"OPErrMsg\",\n" +
-                           "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"OPSeq\",'' as \"Dummy\" from(\n" +
+            string query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"VisOrder\",X0.\"Texture\" as \"U_Texture\",X0.\"U_operationResource\" as \"U_resCode\",X0.\"ResName\" as \"U_resName\",X0.\"U_operationCode\" as \"U_opCode\",\n" +
+                           "X0.\"U_STXOPDes\" as \"U_opDesc\",X0.\"U_STXOPDesLocal\" as \"U_opDescL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_sugQty\",\n" +
+                           "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_Quantity\",X0.\"UnitOfMsr\" as \"U_UOM\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_Price\",\n" +
+                           "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_LineTot\",\n" +
+                           "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"U_ErrMsg\",\n" +
+                           "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"U_seq\" from(\n" +
                            "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
                            "R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",sum(R0.\"Quantity\") as \"Quantity\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",{3},R1.\"ResCost\",R1.\"UnitOfMsr\",sum(R0.\"NTimes\") as \"NTimes\"\n" +
                            "from(\n" +
@@ -186,26 +186,14 @@ namespace STXGen2
             try
             {
                 operations.ExecuteQuery(query);
-                var columnToUidMappings = new Dictionary<string, string>
-                    {
-                        {"#","VisOrder" },
-                        {"OPSeq","U_seq" },
-                        {"OPTexture", "U_Texture" },
-                        {"OPResc", "U_resCode" },
-                        {"OPResN", "U_resName" },
-                        {"OPcode","U_opCode" },
-                        {"OPName","U_opDesc" },
-                        {"OPStdT","U_sugQty" },
-                        {"OPQtdT","U_Quantity" },
-                        {"OPUom","U_UOM" },
-                        {"OPCost","U_Price" },
-                        {"OPTotal","U_LineTot" },
-                        {"OPErrMsg","U_ErrMsg" },
-                        {"OPNameL","U_opDescL" }
-                    };
+
+                string xml = operations.SerializeAsXML(BoDataTableXmlSelect.dxs_All);
+                TempDataTable mdt = xml.XmlDeserializeFromString<TempDataTable>();
+
+
                 //var xmlDatasource = new XMLDatasource();
-                XMLDatasource.DbDataSources dbDataSources = XMLDatasource.GetDbDataSourcesFromOperation(operations, columnToUidMappings);
-                string xmlOperations = (XMLDatasource.GenerateXml(dbDataSources)).ToString();
+                //XMLDatasource.DbDataSources dbDataSources = XMLDatasource.GetDbDataSourcesFromOperation(operations, columnToUidMappings);
+                string xmlOperations = (XMLDatasource.GenerateXml(mdt)).ToString();
                 return xmlOperations;
 
             }
@@ -294,73 +282,73 @@ namespace STXGen2
             return result;
         }
 
-        internal static void UpdateOperationsDB(System.Data.DataTable mOperations, string qCDocEntry)
-        {
-            QCEvents.operationsUpdate = false;
+        //internal static void UpdateOperationsDB(System.Data.DataTable mOperations, string qCDocEntry)
+        //{
+        //    QCEvents.operationsUpdate = false;
 
-            SAPbobsCOM.GeneralData oChild = null;
-            SAPbobsCOM.GeneralDataCollection oChildren = null;
+        //    SAPbobsCOM.GeneralData oChild = null;
+        //    SAPbobsCOM.GeneralDataCollection oChildren = null;
 
-            //SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
+        //    //SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
 
-            SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
-            SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
-            SAPbobsCOM.GeneralData oGeneralData = (SAPbobsCOM.GeneralData)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
-            SAPbobsCOM.GeneralDataParams oGeneralParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+        //    SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+        //    SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+        //    SAPbobsCOM.GeneralData oGeneralData = (SAPbobsCOM.GeneralData)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+        //    SAPbobsCOM.GeneralDataParams oGeneralParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
 
 
-            for (int i = 0; i < mOperations.Rows.Count; i++)
-            {
-                try
-                {
-                    oGeneralParams.SetProperty("DocEntry", qCDocEntry);      //Primary Key
-                    oGeneralData = oGeneralService.GetByParams(oGeneralParams);
+        //    for (int i = 0; i < mOperations.Rows.Count; i++)
+        //    {
+        //        try
+        //        {
+        //            oGeneralParams.SetProperty("DocEntry", qCDocEntry);      //Primary Key
+        //            oGeneralData = oGeneralService.GetByParams(oGeneralParams);
 
-                    oChildren = oGeneralData.Child("STXQC19O");
+        //            oChildren = oGeneralData.Child("STXQC19O");
 
-                    // Check if the child at index i exists
-                    if (i < oChildren.Count)
-                    {
-                        // If it exists, retrieve it
-                        oChild = oChildren.Item(i);
-                    }
-                    else
-                    {
-                        // If it doesn't exist, add a new child and then retrieve it
-                        oChildren.Add();
-                        oChild = oChildren.Item(oChildren.Count - 1);
-                    }
+        //            // Check if the child at index i exists
+        //            if (i < oChildren.Count)
+        //            {
+        //                // If it exists, retrieve it
+        //                oChild = oChildren.Item(i);
+        //            }
+        //            else
+        //            {
+        //                // If it doesn't exist, add a new child and then retrieve it
+        //                oChildren.Add();
+        //                oChild = oChildren.Item(oChildren.Count - 1);
+        //            }
 
-                    oChild.SetProperty("U_Texture", mOperations.Rows[i]["OPTexture"]);
-                    oChild.SetProperty("U_resCode", mOperations.Rows[i]["OPResc"]);
-                    oChild.SetProperty("U_resName", mOperations.Rows[i]["OPResN"]);
-                    oChild.SetProperty("U_opCode", mOperations.Rows[i]["OPcode"]);
-                    oChild.SetProperty("U_opDesc", mOperations.Rows[i]["OPName"]);
-                    oChild.SetProperty("U_opDescL", mOperations.Rows[i]["OPNameL"]);
-                    oChild.SetProperty("U_sugQty", mOperations.Rows[i]["OPStdT"]);
-                    oChild.SetProperty("U_Quantity", mOperations.Rows[i]["OPQtdT"]);
-                    oChild.SetProperty("U_UOM", mOperations.Rows[i]["OPUom"]);
-                    oChild.SetProperty("U_Price", mOperations.Rows[i]["OPCost"]);
-                    oChild.SetProperty("U_LineTot", mOperations.Rows[i]["OPTotal"]);
-                    oChild.SetProperty("U_ErrMsg", mOperations.Rows[i]["OPErrMsg"]);
-                    oChild.SetProperty("U_seq", mOperations.Rows[i]["OPSeq"]);
+        //            oChild.SetProperty("U_Texture", mOperations.Rows[i]["OPTexture"]);
+        //            oChild.SetProperty("U_resCode", mOperations.Rows[i]["OPResc"]);
+        //            oChild.SetProperty("U_resName", mOperations.Rows[i]["OPResN"]);
+        //            oChild.SetProperty("U_opCode", mOperations.Rows[i]["OPcode"]);
+        //            oChild.SetProperty("U_opDesc", mOperations.Rows[i]["OPName"]);
+        //            oChild.SetProperty("U_opDescL", mOperations.Rows[i]["OPNameL"]);
+        //            oChild.SetProperty("U_sugQty", mOperations.Rows[i]["OPStdT"]);
+        //            oChild.SetProperty("U_Quantity", mOperations.Rows[i]["OPQtdT"]);
+        //            oChild.SetProperty("U_UOM", mOperations.Rows[i]["OPUom"]);
+        //            oChild.SetProperty("U_Price", mOperations.Rows[i]["OPCost"]);
+        //            oChild.SetProperty("U_LineTot", mOperations.Rows[i]["OPTotal"]);
+        //            oChild.SetProperty("U_ErrMsg", mOperations.Rows[i]["OPErrMsg"]);
+        //            oChild.SetProperty("U_seq", mOperations.Rows[i]["OPSeq"]);
 
-                    //Update the UDO Record                
-                    oGeneralService.Update(oGeneralData);   // If Child Table does not have any record, it will create; else, update the existing one
+        //            //Update the UDO Record                
+        //            oGeneralService.Update(oGeneralData);   // If Child Table does not have any record, it will create; else, update the existing one
 
-                }
-                catch (Exception ex)
-                {
-                    Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, true);
-                }
-            }
-            for (int j = oChildren.Count - 1; j >= mOperations.Rows.Count; j--)
-            {
-                oChildren.Remove(j);
-                oGeneralService.Update(oGeneralData);
-            }
-            //Program.SBO_Application.SetStatusBarMessage("Operations imported sucessfully.", BoMessageTime.bmt_Medium, false);
-        }
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, true);
+        //        }
+        //    }
+        //    for (int j = oChildren.Count - 1; j >= mOperations.Rows.Count; j--)
+        //    {
+        //        oChildren.Remove(j);
+        //        oGeneralService.Update(oGeneralData);
+        //    }
+        //    //Program.SBO_Application.SetStatusBarMessage("Operations imported sucessfully.", BoMessageTime.bmt_Medium, false);
+        //}
 
         internal static (string,string) GetSPT(SAPbouiCOM.EditText qCSubPart)
         {
@@ -407,5 +395,6 @@ namespace STXGen2
             }
             return cost;
         }
+
     }
 }

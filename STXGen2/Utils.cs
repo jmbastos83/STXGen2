@@ -1,9 +1,12 @@
 ﻿using SAPbobsCOM;
 using System;
+using System.IO;
+using System.Text;
+using System.Xml.Serialization;
 
 namespace STXGen2
 {
-    internal class Utils
+    public static class Utils
     {
         public static SAPbobsCOM.Company oCompany;
 
@@ -120,5 +123,43 @@ namespace STXGen2
             }
             return new System.Globalization.CultureInfo(cultureCode);
         }
+
+        public static string XmlSerializeToString(this object objectInstance)
+        {
+            XmlSerializer serializer = new XmlSerializer(objectInstance.GetType());
+            StringBuilder sb = new StringBuilder();
+            using (TextWriter writer = new StringWriter(sb))
+            {
+                serializer.Serialize(writer, objectInstance);
+            }
+            return sb.ToString();
+        }
+
+        public static T XmlDeserializeFromString<T>(this string objectData)
+        {
+            return (T)XmlDeserializeFromString(objectData, typeof(T));
+        }
+
+        public static object XmlDeserializeFromString(this string objectData, Type type)
+        {
+            if (string.IsNullOrEmpty(objectData))
+            {
+                throw new ArgumentException("The input string cannot be null or empty.", nameof(objectData));
+            }
+
+            try
+            {
+                XmlSerializer serializer = new XmlSerializer(type);
+                using (TextReader reader = new StringReader(objectData))
+                {
+                    return serializer.Deserialize(reader);
+                }
+            }
+            catch (InvalidOperationException ex) // Handles XML format issues or type mismatch issues
+            {
+                throw new InvalidOperationException($"Failed to deserialize the XML string into the type {type.FullName}.", ex);
+            }
+        }
+
     }
 }

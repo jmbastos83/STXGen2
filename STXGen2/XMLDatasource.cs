@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace STXGen2
@@ -60,7 +61,7 @@ namespace STXGen2
             };
 
             // loop over the rows of the DataTable
-            for (int rowIndex = 0; rowIndex < operations.Rows.Count; rowIndex++)
+            Parallel.For(0, operations.Rows.Count, rowIndex =>
             {
                 var row = new Row
                 {
@@ -73,9 +74,7 @@ namespace STXGen2
                     var columnName = operations.Columns.Item(columnIndex).Name;
 
                     // use the column name to get the corresponding Uid from the dictionary
-                    var uid = columnToUidMappings.ContainsKey(columnName) ? columnToUidMappings[columnName] : null;
-
-                    if (uid != null)
+                    if (columnToUidMappings.TryGetValue(columnName, out var uid))
                     {
                         var cell = new Cell
                         {
@@ -87,38 +86,67 @@ namespace STXGen2
                     }
                 }
 
-                dbDataSources.Rows.Add(row);
-            }
+                lock (dbDataSources.Rows)
+                {
+                    dbDataSources.Rows.Add(row);
+                }
+            });
 
             return dbDataSources;
         }
 
-        public static XDocument GenerateXml(DbDataSources dbDataSources)
+
+
+
+
+
+
+        public static string GenerateXml(TempDataTable operationsDataTable)
         {
-            var dbDataSourcesElement = new XElement("dbDataSources", new XAttribute("uid", dbDataSources.Uid));
-            var rowsElement = new XElement("rows");
-            dbDataSourcesElement.Add(rowsElement);
-
-            foreach (var row in dbDataSources.Rows)
+            // Use Uid of operationsDataTable to determine uid attribute value
+            string uid;
+            switch (operationsDataTable.Uid)
             {
-                var rowElement = new XElement("row");
-                var cellsElement = new XElement("cells");
-                rowElement.Add(cellsElement);
-
-                foreach (var cell in row.Cells)
-                {
-                    var cellElement = new XElement("cell",
-                        new XElement("uid", cell.Uid),
-                        new XElement("value", cell.Value)
-                    );
-
-                    cellsElement.Add(cellElement);
-                }
-
-                rowsElement.Add(rowElement);
+                case "Operations":
+                    uid = "@STXQC19O";
+                    break;
+                case "Texture":
+                    uid = "@STXQC19T";
+                    break;
+                default:
+                    throw new Exception($"Invalid Uid: {operationsDataTable.Uid}");
             }
 
-            return new XDocument(new XDeclaration("1.0", "utf-16", "yes"), dbDataSourcesElement);
+                var dataTableElement = new XElement("dbDataSources", new XAttribute("uid", uid));
+                var rowsElement = new XElement("rows");
+                dataTableElement.Add(rowsElement);
+
+                foreach (var row in operationsDataTable.Rows.RowList)
+                {
+                    var rowElement = new XElement("row");
+                    var cellsElement = new XElement("cells");
+                    rowElement.Add(cellsElement);
+
+                    foreach (var cell in row.Cells.CellList)
+                    {
+                        var cellElement = new XElement("cell",
+                            new XElement("uid", cell.ColumnUid),
+                            new XElement("value", cell.Value));
+
+                        cellsElement.Add(cellElement);
+                    }
+
+                    rowsElement.Add(rowElement);
+                }
+
+            XDocument xdoc = new XDocument(new XDeclaration("1.0", "utf-16", "yes"), dataTableElement);
+            StringBuilder sb = new StringBuilder();
+            using (XmlWriter xw = XmlWriter.Create(sb, new XmlWriterSettings { Indent = true, Encoding = Encoding.Unicode }))
+            {
+                xdoc.WriteTo(xw);
+            }
+            string xml = sb.ToString();
+            return xml;
         }
     }
 }
