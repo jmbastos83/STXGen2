@@ -27,8 +27,9 @@ namespace STXGen2
         public static string selectedUOM { get; set; } = "";
         public static string oldLengthValue { get; set; } = "";
         public static string oldWidthValue { get; set; } = "";
-        public static int selectedMatrixRow { get; set; } = 0;
-        public static object mtxMaxLineID { get; set; } = "";
+
+
+        //public static object mtxMaxLineID { get; set; } = "";
         public static string previousUOM { get; set; } = "";
         public static string currentPrice { get; private set; } = "";
         public static double DocExRate { get; private set; } = 0;
@@ -47,7 +48,6 @@ namespace STXGen2
         public static bool recalcConfirm { get; set; }
         public bool lostFocusCovA { get; private set; }
         public string subparttDescr { get; private set; }
-        public static int mtxOMaxLineID { get; set; }
         public static string mOperatinsListXML { get; set; }
 
         private SAPbouiCOM.EditText QCDocEntry;
@@ -180,7 +180,6 @@ namespace STXGen2
             this.mTextures = ((SAPbouiCOM.Matrix)(this.GetItem("mTextures").Specific));
             this.mTextures.LostFocusAfter += new SAPbouiCOM._IMatrixEvents_LostFocusAfterEventHandler(this.mTextures_LostFocusAfter);
             this.mTextures.ClickBefore += new SAPbouiCOM._IMatrixEvents_ClickBeforeEventHandler(this.mTextures_ClickBefore);
-            this.mTextures.MatrixLoadAfter += new SAPbouiCOM._IMatrixEvents_MatrixLoadAfterEventHandler(this.mTextures_MatrixLoadAfter);
             this.mTextures.ClickAfter += new SAPbouiCOM._IMatrixEvents_ClickAfterEventHandler(this.mTextures_ClickAfter);
             this.mTextures.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mTextures_ChooseFromListAfter);
             this.mOCosts = ((SAPbouiCOM.Matrix)(this.GetItem("mOCosts").Specific));
@@ -267,7 +266,6 @@ namespace STXGen2
             this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
             this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
-            this.mOperations.MatrixLoadAfter += new SAPbouiCOM._IMatrixEvents_MatrixLoadAfterEventHandler(this.mOperations_MatrixLoadAfter);
             this.mOperations.ChooseFromListBefore += new SAPbouiCOM._IMatrixEvents_ChooseFromListBeforeEventHandler(this.mOperations_ChooseFromListBefore);
             this.mOperations.DoubleClickAfter += new SAPbouiCOM._IMatrixEvents_DoubleClickAfterEventHandler(this.mOperations_DoubleClickAfter);
             this.mOperations.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mOperations_ChooseFromListAfter);
@@ -299,8 +297,6 @@ namespace STXGen2
         public override void OnInitializeFormEvents()
         {
             this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
-            //this.UnloadAfter += new SAPbouiCOM.Framework.FormBase.UnloadAfterHandler(this.Form_UnloadAfter);
-            this.UnloadBefore += new UnloadBeforeHandler(this.Form_UnloadBefore);
 
         }
 
@@ -321,7 +317,6 @@ namespace STXGen2
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
                 MatrixSorting();
-                mOperatinsListXML = oDBDataSource.GetAsXML();
                 this.Show();
             }
             catch (Exception ex)
@@ -352,7 +347,7 @@ namespace STXGen2
             // Enable QCDocEntry field temporarily
             QCDocEntry.Item.Enabled = true;
             QCDocEntry.Value = qcid;
-
+            
             QCEvents.BindMatrixCheckboxes(this.UIAPIRawForm, mOperations, mOperations.RowCount);
             ButtonOk.Item.Click();
 
@@ -374,6 +369,7 @@ namespace STXGen2
         {
             QCItemCode.Value = itemCode;
             QCItemName.Value = itemName;
+            
             ToolImg.Picture = Path.Combine(!Directory.Exists(Path.Combine(Utils.oCompany.BitMapPath, "Tools Images")) ? Utils.oCompany.BitMapPath : Path.Combine(Utils.oCompany.BitMapPath, "Tools Images"), ToolImg.Picture);
         }
 
@@ -442,6 +438,8 @@ namespace STXGen2
                 mOperations.AddRow();
                 SAPbouiCOM.EditText newAutoRow = (SAPbouiCOM.EditText)mOperations.Columns.Item("#").Cells.Item(1).Specific;
                 newAutoRow.Value = "1";
+
+
             }
         }
 
@@ -497,11 +495,11 @@ namespace STXGen2
                         SAPbouiCOM.Matrix mtxTextures = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mTextures").Specific;
 
                         isChooseFromListTriggered = true;
-                        mtxTextures.SetCellWithoutValidation(selectedMatrixRow, "QCQuantity", "1");
-                        mtxTextures.SetCellWithoutValidation(selectedMatrixRow, "QCCovA", QCArea.Value);
-                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(selectedMatrixRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
-                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(selectedMatrixRow).Specific).Select("2", BoSearchKey.psk_ByValue);
-                        ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(selectedMatrixRow).Specific).Value = TextureCode;
+                        mtxTextures.SetCellWithoutValidation(SAPEvents.selectedRow, "QCQuantity", "1");
+                        mtxTextures.SetCellWithoutValidation(SAPEvents.selectedRow, "QCCovA", QCArea.Value);
+                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(SAPEvents.selectedRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
+                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(SAPEvents.selectedRow).Specific).Select("2", BoSearchKey.psk_ByValue);
+                        ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(SAPEvents.selectedRow).Specific).Value = TextureCode;
                     }
                 }
 
@@ -514,20 +512,6 @@ namespace STXGen2
         }
 
 
-
-        private void mTextures_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            try
-            {
-                mtxMaxLineID = DBCalls.GetMatrixLastLineID(QCDocEntry.Value);
-
-            }
-            catch (Exception ex)
-            {
-
-                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, false);
-            }
-        }
 
         private void UnMsr_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -801,6 +785,7 @@ namespace STXGen2
             {
                 for (int i = 1; i <= mOperations.RowCount; i++)
                 {
+
                     SAPbouiCOM.EditText cellvalue = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPErrMsg").Cells.Item(i).Specific;
                     if (!string.IsNullOrEmpty(cellvalue.Value))
                     {
@@ -809,7 +794,8 @@ namespace STXGen2
                         return;
                     }
                 }
-                mOperations.FlushToDataSource();
+                
+
             }
 
             ToolImg.Picture = Path.GetFileName(ToolImg.Picture);
@@ -1180,38 +1166,18 @@ namespace STXGen2
         private void mTextures_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
             SAPEvents.lastClickedMatrixUID = pVal.ItemUID;
-            selectedMatrixRow = pVal.Row;
+            SAPEvents.selectedRow = pVal.Row;
 
         }
 
-        private void Form_UnloadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
-        {
-            BubbleEvent = true;
+        //private void Form_UnloadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
+        //{
+        //    BubbleEvent = true;
 
-            QuoteCalculator.mtxMaxLineID = 0;
-            selectedMatrixRow = -1;
-        }
+        //    QuoteCalculator.mtxMaxLineID = 0;
+        //    SAPEvents.selectedRow = -1;
+        //}
 
-        private System.Data.DataTable ConvertToDataTable(SAPbouiCOM.DataTable sapDataTable)
-        {
-            System.Data.DataTable dt = new System.Data.DataTable();
-
-            for (int i = 0; i < sapDataTable.Columns.Count; i++)
-            {
-                dt.Columns.Add(sapDataTable.Columns.Item(i).Name);
-            }
-
-            for (int i = 0; i < sapDataTable.Rows.Count; i++)
-            {
-                System.Data.DataRow newRow = dt.NewRow();
-                for (int j = 0; j < sapDataTable.Columns.Count; j++)
-                {
-                    newRow[j] = sapDataTable.GetValue(j, i);
-                }
-                dt.Rows.Add(newRow);
-            }
-            return dt;
-        }
 
         private void mTextures_ClickBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
@@ -1380,37 +1346,58 @@ namespace STXGen2
         {
             try
             {
-
-
                 this.UIAPIRawForm.Freeze(true);
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
 
-                // Iterate through the rows in reverse order
-                for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
+                if (oDBDataSource.Size == 0)
                 {
-                    // Get the value of the "OPcheck" column for the current row
-                    SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
-
-                    // Check if the checkbox is checked
-                    if (checkBox.Checked)
+                    for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
                     {
-                        // Remove the row from the data source
-                        oDBDataSource.RemoveRecord(rowIndex - 1);
+                        // Get the value of the "OPcheck" column for the current row
+                        SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
 
-                        if (rowIndex <= mOperations.RowCount)
+                        // Check if the checkbox is checked
+                        if (checkBox.Checked)
                         {
-                            mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                            checkBox.Checked = false;
                         }
                     }
                 }
-
-                // Update the # aka LineID column
-                for (int i = 0; i < oDBDataSource.Size; i++)
+                else
                 {
-                    oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
-                }
+                    // Iterate through the rows in reverse order
+                    for (int rowIndex = mOperations.RowCount; rowIndex >= 1; rowIndex--)
+                    {
+                        // Get the value of the "OPcheck" column for the current row
+                        SAPbouiCOM.CheckBox checkBox = (SAPbouiCOM.CheckBox)mOperations.Columns.Item("OPcheck").Cells.Item(rowIndex).Specific;
 
-                mOperations.LoadFromDataSource();
+                        // Check if the checkbox is checked
+                        if (checkBox.Checked)
+                        {
+                            // Remove the row from the data source
+                            oDBDataSource.RemoveRecord(rowIndex - 1);
+
+                            if (rowIndex <= mOperations.RowCount)
+                            {
+                                mOperations.CommonSetting.SetRowBackColor(rowIndex, -1);
+                            }
+                        }
+                    }
+
+                    // Update the # aka LineID column
+                    for (int i = 0; i < oDBDataSource.Size; i++)
+                    {
+                        oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
+                    }
+
+                    mOperations.LoadFromDataSource();
+                    if (mOperations.RowCount == 0)
+                    {
+                        AddRowIfMatrixEmpty();
+                        int a = oDBDataSource.Size;
+                    }
+                }
+                   
             }
             finally
             {
@@ -1750,35 +1737,8 @@ namespace STXGen2
                 string formattedQCLength = covA.ToString("N", sapNumberFormat);
 
                 cov.Value = $"{formattedQCLength} {selectedUOM}²";
-                //QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusCovA = true;
             }
-        }
-        //private void BindLinkedButtonToMatrixColumn(Matrix mOperations)
-        //{
-        //    // Get the column you want to bind the LinkedButton to
-        //    Column column = mOperations.Columns.Item("OPResc");
-
-        //    // Cast the column as a LinkedButton
-        //    LinkedButton linkedButton = (LinkedButton)column.ExtendedObject;
-
-        //    // Specify the LinkedObject type
-        //    linkedButton.LinkedObjectType = "290";
-        //}
-
-        private void mOperations_MatrixLoadAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            try
-            {
-                mtxOMaxLineID = DBCalls.GetMatrixOPLastLineID(QCDocEntry.Value);
-
-            }
-            catch (Exception ex)
-            {
-
-                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, false);
-            }
-
         }
     }
 }

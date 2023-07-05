@@ -197,13 +197,9 @@ namespace STXGen2
                 // Handle events for the add-on form
                 if ((pVal.MenuUID == "1292" || pVal.MenuUID == "1293") && !pVal.BeforeAction)
                 {
-                    //SAPbouiCOM.Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-                    //if (activeForm.TypeEx == "STXGen2.QuoteCalculator")
-                    //{
                     if (!string.IsNullOrEmpty(lastClickedMatrixUID))
                     {
                         SAPbouiCOM.Matrix activeMatrix = (SAPbouiCOM.Matrix)activeForm.Items.Item(lastClickedMatrixUID).Specific;
-                        int selectedRow = QuoteCalculator.selectedMatrixRow;
                         HandleQCMatrixMenuEvent(Program.SBO_Application, ref pVal, activeMatrix);
                         return;
                     }

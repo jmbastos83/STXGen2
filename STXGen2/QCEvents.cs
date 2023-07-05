@@ -37,156 +37,46 @@ namespace STXGen2
 
             SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
 
-            if (texturesMatrix.RowCount == 5)
+            if (oDBDataSource.Size == 5)
             {
                 Program.SBO_Application.SetStatusBarMessage("Maximum number of textures reached.", BoMessageTime.bmt_Medium, false);
+                oForm.Freeze(false);
                 return;
             }
 
-            if (texturesMatrix.RowCount == 0 || selectedRow == texturesMatrix.RowCount)
+
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(oDBDataSource.GetAsXML());
+            XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
+            XmlElement newRow = xmlDoc.CreateElement("row");
+            XmlNode selectedNode = rows.Item(selectedRow);
+
+            XmlElement cells = xmlDoc.CreateElement("cells");
+            newRow.AppendChild(cells);
+
+            XmlElement newCell = xmlDoc.CreateElement("cell");
+            XmlElement uidElement = xmlDoc.CreateElement("uid");
+            uidElement.InnerText = "VisOrder";
+            newCell.AppendChild(uidElement);
+            XmlElement valueElement = xmlDoc.CreateElement("value");
+            valueElement.InnerText = (selectedRow).ToString();
+            newCell.AppendChild(valueElement);
+            cells.AppendChild(newCell);
+
+
+            //rows.Item(selectedRow-1).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
+            rows.Item(selectedRow - 1).ParentNode.AppendChild(newRow);
+            for (int i = selectedRow; i < rows.Count; i++)
             {
-                texturesMatrix.AddRow();
-                texturesMatrix.ClearRowData(selectedRow + 1);
-                AddRowToDataSource(oForm, oDBDataSource, selectedRow);
-                texturesMatrix.LoadFromDataSource();
-            }
-            else
-            {
-                if (selectedRow == -1 || selectedRow > texturesMatrix.RowCount)
+                XmlNode visOrderNode = rows.Item(i).SelectSingleNode("cells/cell[uid='VisOrder']/value");
+                if (visOrderNode != null)
                 {
-                    selectedRow = texturesMatrix.RowCount;
-                }
-
-                if (texturesMatrix.RowCount < 5)
-                {
-                    List<Dictionary<int, string>> rowsData = StoreRowData(texturesMatrix, selectedRow);
-
-                    oDBDataSource.InsertRecord(selectedRow + 1);
-                    oDBDataSource.SetValue("VisOrder", selectedRow + 1, (selectedRow + 1).ToString());
-
-                    int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxMaxLineID;
-                    oDBDataSource.SetValue("LineID", selectedRow + 1, (maxLineID + 1).ToString());
-                    QuoteCalculator.mtxMaxLineID = maxLineID + 1;
-
-                    texturesMatrix.LoadFromDataSource();
-
-                    texturesMatrix.ClearRowData(selectedRow + 1);
-                    texturesMatrix.FlushToDataSource();
-
-                    RestoreRowData(texturesMatrix, rowsData, selectedRow, oDBDataSource);
-                    texturesMatrix.SetCellFocus(selectedRow, 1);
+                    visOrderNode.InnerText = (i + 1).ToString();
                 }
             }
 
-            oForm.Freeze(false);
-        }
-
-        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedRow)
-        {
-            bool confirmTOper = false;
-            oForm.Freeze(true);
-
-            SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
-
-            if (operationsMatrix.RowCount == 0 || selectedRow == operationsMatrix.RowCount)
-            {
-                AddRowToDataSource(oForm, oDBDataSource, selectedRow);
-                operationsMatrix.LoadFromDataSource();
-            }
-            else
-            {
-                    int maxLineID = oDBDataSource.Size == 0 ? 0 : (int)QuoteCalculator.mtxOMaxLineID;
-                    // Load the XML into an XmlDocument for easier manipulation.
-                    XmlDocument xmlDoc = new XmlDocument();
-                    xmlDoc.LoadXml(oDBDataSource.GetAsXML());
-
-                    // Navigate to the rows of the data source.
-                    XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
-
-                    // Create a new XML element for the new row and add the data to it.
-                    XmlElement newRow = xmlDoc.CreateElement("row");
-
-                    // Get selected row. Note that rows in XmlNodeList are 0-based, so subtract 1 from the selectedRow.
-                    XmlNode selectedNode = rows.Item(selectedRow);
-
-                    // Let's say you want to get the value of a cell with ColumnUid 'SomeColumnName'
-                    XmlNode cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_seq']/value");
-                    string OP_seq = cellValueNode?.InnerText;
-
-                    cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_Texture']/value");
-                    string OP_Texture = cellValueNode?.InnerText;
-
-                    if (!string.IsNullOrEmpty(OP_Texture))
-                    {
-                        confirmTOper = Program.SBO_Application.MessageBox("Is the new line related to the texture of the select line?", 1, "Yes", "No") == 1;
-                    }
-
-                    XmlElement cells = xmlDoc.CreateElement("cells");
-                    newRow.AppendChild(cells);
-
-                    // Add VisOrder cell
-                    XmlElement newCell = xmlDoc.CreateElement("cell");
-                    XmlElement uidElement = xmlDoc.CreateElement("uid");
-                    uidElement.InnerText = "VisOrder";
-                    newCell.AppendChild(uidElement);
-                    XmlElement valueElement = xmlDoc.CreateElement("value");
-                    valueElement.InnerText = (selectedRow).ToString(); // replace with the actual new VisOrder
-                    newCell.AppendChild(valueElement);
-                    cells.AppendChild(newCell);
-
-                    // Add LineID cell
-                    newCell = xmlDoc.CreateElement("cell");
-                    uidElement = xmlDoc.CreateElement("uid");
-                    uidElement.InnerText = "LineId";
-                    newCell.AppendChild(uidElement);
-                    valueElement = xmlDoc.CreateElement("value");
-                    valueElement.InnerText = (maxLineID + 1).ToString(); // replace with the actual new LineID
-                    newCell.AppendChild(valueElement);
-                    cells.AppendChild(newCell);
-
-                if (confirmTOper)
-                    {
-                        newCell = xmlDoc.CreateElement("cell");
-                        uidElement = xmlDoc.CreateElement("uid");
-                        uidElement.InnerText = "U_Texture";
-                        newCell.AppendChild(uidElement);
-                        valueElement = xmlDoc.CreateElement("value");
-                        valueElement.InnerText = (OP_Texture).ToString(); // replace with the actual new VisOrder
-                        newCell.AppendChild(valueElement);
-                        cells.AppendChild(newCell);
-
-                        newCell = xmlDoc.CreateElement("cell");
-                        uidElement = xmlDoc.CreateElement("uid");
-                        uidElement.InnerText = "U_seq";
-                        newCell.AppendChild(uidElement);
-                        valueElement = xmlDoc.CreateElement("value");
-                        valueElement.InnerText = (OP_seq).ToString(); // replace with the actual new VisOrder
-                        newCell.AppendChild(valueElement);
-                        cells.AppendChild(newCell);
-                    }
-
-                    // Insert the new row at the desired position.
-                    rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
-
-                    // Update the VisOrder for the rest of the rows.
-                    for (int i = selectedRow; i < rows.Count; i++)
-                    {
-                        XmlNode visOrderNode = rows.Item(i).SelectSingleNode("cells/cell[uid='VisOrder']/value");
-                        if (visOrderNode != null)
-                        {
-                            visOrderNode.InnerText = (i + 1).ToString();
-                        }
-                    }
-
-                    // Convert the XmlDocument back to a string.
-                    string xmlData = xmlDoc.OuterXml;
-
-                    // Load the updated data back into the database data source.
-                    oDBDataSource.LoadFromXML(xmlData);
-
-                    QuoteCalculator.mtxOMaxLineID = maxLineID + 1;
-            }
-
+            string xmlData = xmlDoc.OuterXml;
+            oDBDataSource.LoadFromXML(xmlData);
 
             if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
             {
@@ -195,76 +85,95 @@ namespace STXGen2
             oForm.Freeze(false);
         }
 
-        private static void AddRowToDataSource(SAPbouiCOM.Form oForm, SAPbouiCOM.DBDataSource oDBDataSource, int selectedRow)
-        {
-            oDBDataSource.InsertRecord(selectedRow);
-            oDBDataSource.SetValue("VisOrder", selectedRow, (selectedRow + 1).ToString());
-        }
 
-        private static List<Dictionary<int, string>> StoreRowData(SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
+        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedRow)
         {
-            List<Dictionary<int, string>> rowsData = new List<Dictionary<int, string>>();
+            bool confirmTOper = false;
+            oForm.Freeze(true);
 
-            for (int rowIndex = selectedRow + 1; rowIndex <= texturesMatrix.RowCount; rowIndex++)
+            SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
+
+
+            XmlDocument xmlDoc = new XmlDocument();
+            xmlDoc.LoadXml(oDBDataSource.GetAsXML());
+            XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
+            XmlElement newRow = xmlDoc.CreateElement("row");
+            XmlNode selectedNode = rows.Item(selectedRow - 1);
+
+            XmlNode cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_seq']/value");
+            string OP_seq = cellValueNode?.InnerText;
+
+
+            cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_Texture']/value");
+            string OP_Texture = cellValueNode?.InnerText;
+
+            if (!string.IsNullOrEmpty(OP_Texture))
             {
-                Dictionary<int, string> row = new Dictionary<int, string>();
-
-                for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
-                {
-                    var column = texturesMatrix.Columns.Item(colIndex);
-                    var cellSpecific = column.Cells.Item(rowIndex).Specific;
-
-                    if (cellSpecific is SAPbouiCOM.EditText editText)
-                    {
-                        row[colIndex] = column.UniqueID == "#" && int.TryParse(editText.Value, out int value) ?
-                                        (value + 1).ToString() :
-                                        editText.Value.ToString();
-                    }
-                    else if (cellSpecific is SAPbouiCOM.LinkedButton linkButton)
-                    {
-                        row[colIndex] = ((SAPbouiCOM.EditText)linkButton.Item.Specific)?.Value;
-                    }
-                    else if (cellSpecific is SAPbouiCOM.ComboBox comboBox)
-                    {
-                        row[colIndex] = comboBox.Selected?.Value.ToString();
-                    }
-                }
-
-                rowsData.Add(row);
+                confirmTOper = Program.SBO_Application.MessageBox("Is the new line related to the texture of the select line?", 1, "Yes", "No") == 1;
             }
 
-            return rowsData;
-        }
+            XmlElement cells = xmlDoc.CreateElement("cells");
+            newRow.AppendChild(cells);
 
-       
+            XmlElement newCell = xmlDoc.CreateElement("cell");
+            XmlElement uidElement = xmlDoc.CreateElement("uid");
+            uidElement.InnerText = "VisOrder";
+            newCell.AppendChild(uidElement);
+            XmlElement valueElement = xmlDoc.CreateElement("value");
+            valueElement.InnerText = (selectedRow).ToString();
+            newCell.AppendChild(valueElement);
+            cells.AppendChild(newCell);
 
-        private static void RestoreRowData(SAPbouiCOM.Matrix texturesMatrix, List<Dictionary<int, string>> rowsData, int selectedRow, SAPbouiCOM.DBDataSource oDBDataSource)
-        {
-            for (int rowIndex = 0; rowIndex < rowsData.Count; rowIndex++)
+            if (confirmTOper)
             {
-                for (int colIndex = 0; colIndex < texturesMatrix.Columns.Count; colIndex++)
+                newCell = xmlDoc.CreateElement("cell");
+                uidElement = xmlDoc.CreateElement("uid");
+                uidElement.InnerText = "U_Texture";
+                newCell.AppendChild(uidElement);
+                valueElement = xmlDoc.CreateElement("value");
+                valueElement.InnerText = (OP_Texture).ToString();
+                newCell.AppendChild(valueElement);
+                cells.AppendChild(newCell);
+
+                newCell = xmlDoc.CreateElement("cell");
+                uidElement = xmlDoc.CreateElement("uid");
+                uidElement.InnerText = "U_seq";
+                newCell.AppendChild(uidElement);
+                valueElement = xmlDoc.CreateElement("value");
+                valueElement.InnerText = (OP_seq).ToString();
+                newCell.AppendChild(valueElement);
+                cells.AppendChild(newCell);
+            }
+
+            if (selectedRow == rows.Count) // When the last row is selected
+            {
+                // Append the new row to the end of the list
+                rows.Item(selectedRow-1).ParentNode.AppendChild(newRow);
+            }
+            else
+            {
+                // Insert the new row before the next row
+                rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
+            }
+            //rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
+            for (int i = selectedRow; i < rows.Count; i++)
+            {
+                XmlNode visOrderNode = rows.Item(i).SelectSingleNode("cells/cell[uid='VisOrder']/value");
+                if (visOrderNode != null)
                 {
-                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_EDIT)
-                    {
-                        ((SAPbouiCOM.EditText)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Value = rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "";
-                        if (colIndex == 0)
-                        {
-                            texturesMatrix.FlushToDataSource();
-                        }
-                    }
-                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_COMBO_BOX)
-                    {
-                        ((SAPbouiCOM.ComboBox)texturesMatrix.Columns.Item(colIndex).Cells.Item(rowIndex + (selectedRow + 2)).Specific).Select(rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "0", BoSearchKey.psk_ByValue);
-                    }
-                    if (texturesMatrix.Columns.Item(colIndex).Type == BoFormItemTypes.it_LINKED_BUTTON)
-                    {
-                        oDBDataSource.SetValue("U_Texture", (rowIndex + (selectedRow + 1)), rowsData[rowIndex].ContainsKey(colIndex) ? rowsData[rowIndex][colIndex] : "");
-                        texturesMatrix.LoadFromDataSource();
-                    }
+                    visOrderNode.InnerText = (i + 1).ToString();
                 }
             }
-        }
 
+            string xmlData = xmlDoc.OuterXml;
+            oDBDataSource.LoadFromXML(xmlData);
+
+            if (!oForm.Mode.Equals(BoFormMode.fm_UPDATE_MODE))
+            {
+                oForm.Mode = BoFormMode.fm_UPDATE_MODE;
+            }
+            oForm.Freeze(false);
+        }
 
         internal static void FillTextureClass(IForm uIAPIRawForm)
         {
@@ -482,15 +391,15 @@ namespace STXGen2
         internal static void RemoveLinefromOperationMatrix(SAPbouiCOM.Form oForm, Matrix OperationsMatrix, int selectedMatrixRow)
         {
             SAPbouiCOM.ComboBox OPFilter = (SAPbouiCOM.ComboBox)oForm.Items.Item("OPFilter").Specific;
-            if (QuoteCalculator.selectedMatrixRow > 0)
+            if (SAPEvents.selectedRow > 0)
             {
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
 
                 // Remove the row from the data source
-                oDBDataSource.RemoveRecord(QuoteCalculator.selectedMatrixRow - 1);
+                oDBDataSource.RemoveRecord(SAPEvents.selectedRow - 1);
 
                 // Update the # aka LineID column
-                for (int i = QuoteCalculator.selectedMatrixRow - 1; i < oDBDataSource.Size; i++)
+                for (int i = SAPEvents.selectedRow - 1; i < oDBDataSource.Size; i++)
                 {
                     oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
                 }
@@ -512,15 +421,15 @@ namespace STXGen2
 
         internal static void RemoveLinefromTexturesMatrix(SAPbouiCOM.Form oForm, Matrix texturesMatrix, int selectedMatrixRow)
         {
-            if (QuoteCalculator.selectedMatrixRow > 0)
+            if (SAPEvents.selectedRow > 0)
             {
                 SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
 
                 // Remove the row from the data source
-                oDBDataSource.RemoveRecord(QuoteCalculator.selectedMatrixRow - 1);
+                oDBDataSource.RemoveRecord(SAPEvents.selectedRow - 1);
 
                 // Update the # aka LineID column
-                for (int i = QuoteCalculator.selectedMatrixRow - 1; i < oDBDataSource.Size; i++)
+                for (int i = SAPEvents.selectedRow - 1; i < oDBDataSource.Size; i++)
                 {
                     oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
                 }
