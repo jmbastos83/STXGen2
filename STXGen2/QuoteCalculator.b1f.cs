@@ -301,6 +301,7 @@ namespace STXGen2
             this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
             this.EditText16 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
             this.BaseLine = ((SAPbouiCOM.EditText)(this.GetItem("BaseLine").Specific));
+            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("Item_7").Specific));
             this.OnCustomInitialize();
 
         }
@@ -1821,5 +1822,6 @@ namespace STXGen2
             
         }
 
+        private EditText EditText1;
     }
 }

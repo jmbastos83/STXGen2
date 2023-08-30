@@ -11,13 +11,15 @@ namespace STXGen2
     [FormAttribute("149", "SalesQuotation.b1f")]
     class SystemForm1 : SystemFormBase
     {
-        private Matrix Matrix0;
+
+        public SAPbouiCOM.Conditions oCons;
+        public SAPbouiCOM.Condition oCon;
+
         private string ItemCC1;
         private string ItemCC2;
         private string activeFormUID;
         private double resCC1;
         private double resCC2;
-        private ButtonCombo ButtonCombo0;
 
         private bool isChooseFromListTriggered = false;
         private bool isChooseFromListPickerTriggered = false;
@@ -31,6 +33,17 @@ namespace STXGen2
         private Form activeForm;
         private string itemChosen;
         private ItemData selectedItem;
+
+        private EditText stxMKSeg1;
+        private EditText stxMKSEG2;
+        private EditText stxBrand;
+        private EditText EditText3;
+        private EditText EditText4;
+        private EditText EditText5;
+        private EditText EditText6;
+
+        private Matrix Matrix0;
+        private ButtonCombo ButtonCombo0;
 
         public string prevItemCode { get; private set; }
         public string STXQCID { get; private set; }
@@ -46,6 +59,16 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeComponent()
         {
+            
+            this.stxMKSeg1 = ((SAPbouiCOM.EditText)(this.GetItem("MKSeg1").Specific));
+            this.stxMKSEG2 = ((SAPbouiCOM.EditText)(this.GetItem("MKSEG2").Specific));
+            this.stxMKSEG2.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxMKSEG2_ChooseFromListBefore);
+            this.stxBrand = ((SAPbouiCOM.EditText)(this.GetItem("STXBrand").Specific));
+            this.stxBrand.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxBrand_ChooseFromListBefore);
+            this.EditText3 = ((SAPbouiCOM.EditText)(this.GetItem("NBOID").Specific));
+            this.EditText4 = ((SAPbouiCOM.EditText)(this.GetItem("OEMPgm").Specific));
+            this.EditText5 = ((SAPbouiCOM.EditText)(this.GetItem("OEM").Specific));
+            this.EditText6 = ((SAPbouiCOM.EditText)(this.GetItem("GKAM").Specific));
 
             this.Matrix0 = ((SAPbouiCOM.Matrix)(this.GetItem("38").Specific));
             this.Matrix0.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.Matrix0_GotFocusAfter);
@@ -53,18 +76,13 @@ namespace STXGen2
             this.Matrix0.PickerClickedBefore += new SAPbouiCOM._IMatrixEvents_PickerClickedBeforeEventHandler(this.Matrix0_PickerClickedBefore);
             this.Matrix0.KeyDownBefore += new SAPbouiCOM._IMatrixEvents_KeyDownBeforeEventHandler(this.Matrix0_KeyDownBefore);
             this.Matrix0.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.Matrix0_ChooseFromListAfter);
+
             this.ButtonCombo0 = this.GetItem("1").Specific as SAPbouiCOM.ButtonCombo;
             if (this.ButtonCombo0 != null)
             {
-                // Handle the error here.
-                // This means the cast was unsuccessful.
                 this.ButtonCombo0 = ((SAPbouiCOM.ButtonCombo)(this.GetItem("1").Specific));
                 this.ButtonCombo0.PressedBefore += new SAPbouiCOM._IButtonComboEvents_PressedBeforeEventHandler(this.ButtonCombo0_PressedBefore);
             }
-            
-
-            
-            this.OnCustomInitialize();
 
         }
 
@@ -113,8 +131,8 @@ namespace STXGen2
 
                         if (isChooseFromListPickerTriggered == false && isChooseFromListTriggered == true && itmChange == true)
                         {
-                            SetItemProperties(selectedItem, pVal.Row); // Adjust method signature and implementation
-                            itemChangedVal(selectedItem, pVal.Row);    // Adjust method signature and implementation
+                            SetItemProperties(selectedItem, pVal.Row); 
+                            itemChangedVal(selectedItem, pVal.Row);    
                         }
                     }
                 }
@@ -427,6 +445,65 @@ namespace STXGen2
         {
             SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
             oMatrix.AutoResizeColumns();
+
+        }
+
+
+        private void stxMKSEG2_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            try
+            {
+                SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("CFLMKSEG2");
+
+                oCons = null;
+                oCon = null;
+
+                oCfl.SetConditions(oCons);
+
+                oCons = oCfl.GetConditions();
+
+                oCon = oCons.Add();
+                oCon.Alias = "U_MKSeg1Name";
+                oCon.Operation = SAPbouiCOM.BoConditionOperation.co_EQUAL;
+                oCon.CondVal = stxMKSeg1.Value.ToString();
+
+                oCfl.SetConditions(oCons);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        private void stxBrand_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            try
+            {
+                SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("CFLBRANDS");
+
+                oCons = null;
+                oCon = null;
+
+                oCfl.SetConditions(oCons);
+
+                oCons = oCfl.GetConditions();
+
+                oCon = oCons.Add();
+                oCon.Alias = "U_MKSeg1Name";
+                oCon.Operation = SAPbouiCOM.BoConditionOperation.co_EQUAL;
+                oCon.CondVal = stxMKSeg1.Value.ToString();
+
+                oCfl.SetConditions(oCons);
+
+
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
 
         }
     }
