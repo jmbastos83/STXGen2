@@ -48,6 +48,8 @@
     <Reference Include="SAPBusinessOneSDK" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ItemData.cs" />
+    <Compile Include="SAPForms.cs" />
     <Compile Include="TempDataTable.cs" />
     <Compile Include="TempDataTableCell.cs" />
     <Compile Include="TempDataTableCells.cs" />

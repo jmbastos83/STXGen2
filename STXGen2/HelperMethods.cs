@@ -15,7 +15,14 @@ namespace STXGen2
             => (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item(itemId).Specific;
 
         internal static double ParseValueToDouble(string value)
-            => double.Parse(value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return 0;
+            }
+
+            return double.Parse(value, NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
+        }
 
         internal static double ParseSAPValueToDouble(string value)
             => double.Parse(value, sapNumberFormat);

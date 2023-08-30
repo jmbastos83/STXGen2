@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.Globalization;
 using SAPbouiCOM;
+using SAPbobsCOM;
 
 namespace STXGen2
 {
     internal class SAPEvents
     {
-        
 
+        public static QuoteCalculator frmQCalc;
         public static List<int> deletedTexturesList = new List<int>();
 
         private static SAPbouiCOM.Form oForm;
@@ -22,6 +23,7 @@ namespace STXGen2
         public static string qcid { get; private set; }
         public static string lastClickedMatrixUID { get; set; }
         public static int selectedRow { get; set; }
+        public static int SysFormLine { get; private set; }
 
         internal static void SBO_Application_RightClickEvent(ref ContextMenuInfo eventInfo, out bool BubbleEvent)
         {
@@ -61,12 +63,6 @@ namespace STXGen2
 
                         }
                     }
-
-                    //else
-                    //{
-                    //    SAPbouiCOM.Framework.Application.SBO_Application.MessageBox("Please add the document before procceding.");
-                    //}
-
                 }
                 else
                 {
@@ -120,78 +116,88 @@ namespace STXGen2
             }
 
             Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-            if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc") // Sales Quotation form.
+            if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc")
             {
-                    Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific; // The item matrix in the Sales Quotation form.
-                    //selectedRow = itemMatrix.GetNextSelectedRow();
+                Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific; 
 
-                    if (selectedRow > -1)
+                if (selectedRow > -1)
+                {
+                    SysFormLine = selectedRow;
+                    SAPbouiCOM.EditText etItemCode = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("1").Cells.Item(selectedRow).Specific;
+                    itemCode = etItemCode.Value;
+                    SAPbouiCOM.EditText etDescription = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("3").Cells.Item(selectedRow).Specific;
+                    itemName = etDescription.Value;
+                    SAPbouiCOM.EditText etLineNum = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("110").Cells.Item(selectedRow).Specific;
+                    mLinenum = etLineNum.Value;
+                    SAPbouiCOM.EditText etQCID = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("U_STXQC19ID").Cells.Item(selectedRow).Specific;
+                    qcid = etQCID.Value;
+
+                    SAPbouiCOM.EditText UnPrice = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("14").Cells.Item(selectedRow).Specific;
+                    string unPrice = UnPrice.Value;
+
+                    string docCur = "";
+
+                    SAPbouiCOM.ComboBox CurSource = (SAPbouiCOM.ComboBox)activeForm.Items.Item("70").Specific;
+                    switch (CurSource.Value)
                     {
-                        SAPbouiCOM.EditText etItemCode = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("1").Cells.Item(selectedRow).Specific;
-                        itemCode = etItemCode.Value;
-                        SAPbouiCOM.EditText etDescription = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("3").Cells.Item(selectedRow).Specific;
-                        itemName = etDescription.Value;
-                        SAPbouiCOM.EditText etLineNum = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("110").Cells.Item(selectedRow).Specific;
-                        mLinenum = etLineNum.Value;
-                        SAPbouiCOM.EditText etQCID = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("U_STXQC19ID").Cells.Item(selectedRow).Specific;
-                        qcid = etQCID.Value;
+                        case "L":
+                            docCur = Utils.MainCurrency;
+                            exRate = 1;
+                            break;
+                        case "S":
+                            docCur = Utils.SystemCurrency;
+                            exRate = 1;
+                            break;
+                        case "C":
+                            SAPbouiCOM.ComboBox DocCur = (SAPbouiCOM.ComboBox)activeForm.Items.Item("63").Specific;
+                            docCur = DocCur.Value;
+                            SAPbouiCOM.EditText ExRate = (SAPbouiCOM.EditText)activeForm.Items.Item("64").Specific;
+                            float.TryParse(ExRate.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out exRate);
+                            break;
+                    }
 
-                        SAPbouiCOM.EditText UnPrice = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("14").Cells.Item(selectedRow).Specific;
-                        string unPrice = UnPrice.Value;
+                    if (string.IsNullOrEmpty(qcid))
+                    {
+                        frmQCalc = new QuoteCalculator();
+                        frmQCalc.ParentFormUID = activeForm.UniqueID;
 
-                        string docCur = "";
+                        string formTypeEx = activeForm.TypeEx;
+                        string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
 
-                        SAPbouiCOM.ComboBox CurSource = (SAPbouiCOM.ComboBox)activeForm.Items.Item("70").Specific;
-                        switch (CurSource.Value)
-                        {
-                            case "L":
-                                docCur = Utils.MainCurrency;
-                                exRate = 1;
-                                break;
-                            case "S":
-                                docCur = Utils.SystemCurrency;
-                                exRate = 1;
-                                break;
-                            case "C":
-                                SAPbouiCOM.ComboBox DocCur = (SAPbouiCOM.ComboBox)activeForm.Items.Item("63").Specific;
-                                docCur = DocCur.Value;
-                                SAPbouiCOM.EditText ExRate = (SAPbouiCOM.EditText)activeForm.Items.Item("64").Specific;
-                                float.TryParse(ExRate.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out exRate);
-                                break;
-                        }
+                        SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
+                        string DocEntry = oDBDS.GetValue("DocEntry", 0);
+                        string ObjType = oDBDS.GetValue("ObjType", 0);
 
-                        if (string.IsNullOrEmpty(qcid))
-                        {
+                        qcid = frmQCalc.AddUDO(DocEntry, ObjType, mLinenum);
+                        //nQCalc.UpdateUDO(qcid, DocEntry, ObjType, mLinenum);
 
-                            string HeaderTable = "";
+                        SAPbouiCOM.Matrix mDocLines = ((SAPbouiCOM.Matrix)(activeForm.Items.Item("38").Specific));
+                        mDocLines.Columns.Item("U_STXQC19ID").Editable = true;
+                        etQCID.Value = qcid;
 
-                            switch (activeForm.TypeEx)
-                            {
-                                case "149":
-                                    //    nQCalc.ObjectType = SAPbobsCOM.BoObjectTypes.oQuotations;
-                                    HeaderTable = "OQUT";
-                                    break;
-                                case "139":
-                                    //    nQCalc.ObjectType = SAPbobsCOM.BoObjectTypes.oOrders;
-                                    HeaderTable = "ORDR";
-                                    break;
-
-
-                                default:
-                                    break;
-                            }
-                        }
-
-                        QuoteCalculator frmQCalc = new QuoteCalculator();
+                        activeForm.Items.Item("1").Click();
+                        mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
                         frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate);
-
                     }
                     else
                     {
-                        Program.SBO_Application.SetStatusBarMessage("Please select a row in the item matrix.", BoMessageTime.bmt_Short, false);
+                        frmQCalc = new QuoteCalculator();
+
+                        frmQCalc.ParentFormUID = activeForm.UniqueID;
+                        if (activeForm.Mode == BoFormMode.fm_UPDATE_MODE)
+                        {
+                            activeForm.Items.Item("1").Click();
+                        }
+                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate);
                     }
+
+                }
+                else
+                {
+                    Program.SBO_Application.SetStatusBarMessage("Please select a row in the item matrix.", BoMessageTime.bmt_Short, false);
+                }
             }
-            else
+
             if (activeForm.TypeEx == "STXGen2.QuoteCalculator")
             {
                 // Handle events for the add-on form
@@ -218,6 +224,7 @@ namespace STXGen2
                 SAPbouiCOM.Form oForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
                 if (pVal.MenuUID == "1292" && !pVal.BeforeAction)
                 {
+                    oForm.Freeze(true);
                     if (SAPEvents.lastClickedMatrixUID == "mTextures")
                     {
                         QCEvents.AddLineToTexturesMatrix(oForm, activeMatrix, selectedRow);
@@ -229,7 +236,7 @@ namespace STXGen2
                 }
                 else if (pVal.MenuUID == "1293" && !pVal.BeforeAction)
                 {
-
+                    oForm.Freeze(true);
                     if (SAPEvents.lastClickedMatrixUID == "mTextures")
                     {
                         QCEvents.RemoveLinefromTexturesMatrix(oForm, activeMatrix, selectedRow);
@@ -241,7 +248,7 @@ namespace STXGen2
                         QCEvents.RemoveLinefromOperationMatrix(oForm, activeMatrix, selectedRow);
                     }
 
-                   
+
                 }
 
             }
@@ -249,10 +256,12 @@ namespace STXGen2
             {
                 Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, true);
             }
+            finally
+            {
+                oForm.Freeze(false);
+            }
 
         }
-
-
 
 
         internal static void SBO_Application_AppEvent(BoAppEventTypes EventType)

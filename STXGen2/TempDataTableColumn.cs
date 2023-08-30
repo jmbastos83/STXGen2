@@ -1,7 +1,5 @@
 ﻿using System.Xml.Serialization;
 
-using System.Xml.Serialization;
-
 namespace STXGen2
 {
     [XmlRoot(ElementName = "Column")]

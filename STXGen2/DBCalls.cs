@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace STXGen2
@@ -72,6 +73,44 @@ namespace STXGen2
             {
                 return ("1", "");
             }
+        }
+
+        internal static double VerifyCC2(string itemCC2)
+        {
+            double result = 0;
+
+            string sSql = $"select \"PrcCode\" from OPRC where \"DimCode\" = 3 and \"PrcCode\" = '{itemCC2}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+            if (rs.RecordCount > 0)
+            {
+                result = 1;
+            }
+            else
+            {
+                result = 0;
+            }
+
+            return result;
+        }
+
+        internal static double VerifyCC1(string itemCC1)
+        {
+            double result = 0;
+
+            string sSql = $"select \"PrcCode\" from OPRC where \"DimCode\" = 1 and \"PrcCode\" = '{itemCC1}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+            if (rs.RecordCount > 0)
+            {
+                result = 1;
+            }
+            else
+            {
+                result = 0;
+            }
+
+            return result;
         }
 
         internal static double ConvertDimensions(double size, string selectedUoM, string previousUom)
@@ -202,6 +241,136 @@ namespace STXGen2
 
                 Program.SBO_Application.SetStatusBarMessage(ex.Message);
                 return null;
+            }
+        }
+
+        internal static int getDocLineofQCID(string qcidValue, string sapdocEntry, string sapObjType)
+        {
+            int docLine = -1;
+            string sSql = $"select \"U_bsDocEntry\",\"U_bsLineNum\",\"U_bsObjType\" from \"@STXQC19\" where \"DocEntry\" = '{qcidValue}' and \"U_bsDocEntry\" = '{sapdocEntry}' and \"U_bsObjType\" = '{sapObjType}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                docLine = (int)rs.Fields.Item("U_bsLineNum").Value;
+            }
+
+            return docLine;
+        }
+
+        internal static string duplicateQCID(string qcidValue, string sapdocEntry, string sapObjType, string intLineNo, bool itmChange)
+        {
+            string sapDocE = "";
+            string sapObjTyp = "";
+            string sapLineNo = "";
+
+            string sSql = $"select \"DocEntry\",\"U_bsDocEntry\",\"U_bsObjType\",\"U_bsLineNum\" from \"@STXQC19\" where \"DocEntry\" = '{qcidValue}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                sapDocE = rs.Fields.Item("U_bsDocEntry").Value.ToString();
+                sapObjTyp = rs.Fields.Item("U_bsObjType").Value.ToString() ;
+                sapLineNo = rs.Fields.Item("U_bsLineNum").Value.ToString();
+
+            }
+
+            if (rs.RecordCount > 0 && (sapdocEntry != sapDocE || sapObjTyp != sapObjType))
+            {
+                    SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+                    SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+
+
+                    SAPbobsCOM.GeneralDataParams oParameters = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+                    oParameters.SetProperty("DocEntry", qcidValue);
+
+                    // Get the UDO entry you wish to duplicate
+                    SAPbobsCOM.GeneralData oldEntry = oGeneralService.GetByParams(oParameters);
+                    oldEntry.SetProperty("U_bsLineNum", intLineNo);
+                    oldEntry.SetProperty("U_bsDocEntry", sapdocEntry);
+                    oldEntry.SetProperty("U_bsObjType", sapObjType);
+
+                    SAPbobsCOM.GeneralDataParams newEntryParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.Add(oldEntry);
+
+
+                    // Get the DocEntry of the newly added record
+                    string newEntryNumber = newEntryParams.GetProperty("DocEntry").ToString();
+
+                    return newEntryNumber;
+            }
+
+            else if (rs.RecordCount > 0 && (sapdocEntry == sapDocE && sapObjTyp == sapObjType) && intLineNo != sapLineNo)
+            {
+                if (itmChange == true)
+                {
+                    SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+                    SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+
+
+                    SAPbobsCOM.GeneralDataParams oParameters = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+                    oParameters.SetProperty("DocEntry", qcidValue);
+
+                    // Get the UDO entry you wish to duplicate
+                    SAPbobsCOM.GeneralData oldEntry = oGeneralService.GetByParams(oParameters);
+
+
+                    // Remove or modify the specific child table data
+                    SAPbobsCOM.GeneralDataCollection childTable = oldEntry.Child("STXQC19O"); // Replace 'NameOfChildTableToExclude' with the actual child table's name
+                                                                                                               // Removing child table rows one by one
+                    while (childTable.Count > 0)
+                    {
+                        childTable.Remove(0); // Removes the first entry. As entries shift up, continuously removing the first entry will eventually clear the collection.
+                    }
+
+
+                    oldEntry.SetProperty("U_bsLineNum", intLineNo);
+                    oldEntry.SetProperty("U_bsDocEntry", sapdocEntry);
+                    oldEntry.SetProperty("U_bsObjType", sapObjType);
+
+                    SAPbobsCOM.GeneralDataParams newEntryParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.Add(oldEntry);
+
+
+                    // Get the DocEntry of the newly added record
+                    string newEntryNumber = newEntryParams.GetProperty("DocEntry").ToString();
+
+                    return newEntryNumber;
+                }
+                else
+                {
+                    SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+                    SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+
+
+                    SAPbobsCOM.GeneralDataParams oParameters = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+                    oParameters.SetProperty("DocEntry", qcidValue);
+
+                    // Get the UDO entry you wish to duplicate
+                    SAPbobsCOM.GeneralData oldEntry = oGeneralService.GetByParams(oParameters);
+                    oldEntry.SetProperty("U_bsLineNum", intLineNo);
+                    oldEntry.SetProperty("U_bsDocEntry", sapdocEntry);
+                    oldEntry.SetProperty("U_bsObjType", sapObjType);
+
+                    SAPbobsCOM.GeneralDataParams newEntryParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.Add(oldEntry);
+
+
+                    // Get the DocEntry of the newly added record
+                    string newEntryNumber = newEntryParams.GetProperty("DocEntry").ToString();
+
+                    return newEntryNumber;
+                }
+            }
+            else
+            {
+                if (string.IsNullOrEmpty(qcidValue))
+                {
+                        return null;
+                }
+                else
+                {
+                    return qcidValue;
+                }
             }
         }
 
@@ -350,7 +519,7 @@ namespace STXGen2
         //    //Program.SBO_Application.SetStatusBarMessage("Operations imported sucessfully.", BoMessageTime.bmt_Medium, false);
         //}
 
-        internal static (string,string) GetSPT(SAPbouiCOM.EditText qCSubPart)
+        internal static (string, string) GetSPT(SAPbouiCOM.EditText qCSubPart)
         {
             string spt = "";
             string descr = "";
@@ -367,7 +536,7 @@ namespace STXGen2
             QuoteCalculator.parttDescr = descr;
             descr = descr + ": ";
 
-            string newQCSubPart = qCSubPart.String.Length > 2 ? qCSubPart.String.Substring(0, qCSubPart.String.Length - 2) + "00": qCSubPart.String + "00";
+            string newQCSubPart = qCSubPart.String.Length > 2 ? qCSubPart.String.Substring(0, qCSubPart.String.Length - 2) + "00" : qCSubPart.String + "00";
             string sSql2 = $"SELECT T0.\"ItemCode\", T0.\"ItemName\" as \"Part Name\" FROM OITM T0 WHERE T0.\"ItemCode\" like '{newQCSubPart}'";
 
             Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
@@ -378,7 +547,7 @@ namespace STXGen2
                 spt = (string)rs2.Fields.Item("ItemCode").Value;
                 descr = descr + (string)rs2.Fields.Item("Part Name").Value;
             }
-            return (spt,descr);
+            return (spt, descr);
         }
 
         internal static string ResCost(string resCode)
@@ -396,5 +565,111 @@ namespace STXGen2
             return cost;
         }
 
+        internal static BoObjectTypes GetSAPObjectType(string sapObj)
+        {
+            // Create a dictionary to map numeric values to BoObjectTypes
+            Dictionary<string, BoObjectTypes> objectMapping = new Dictionary<string, BoObjectTypes>
+            {
+                { "23", BoObjectTypes.oQuotations },
+                { "17", BoObjectTypes.oOrders },
+                { "202", BoObjectTypes.oWorkOrders }
+            };
+
+            // Check if the sapObj value is in the dictionary
+            if (objectMapping.TryGetValue(sapObj, out BoObjectTypes objectType))
+            {
+                return objectType;
+            }
+            else
+            {
+                return BoObjectTypes.oQuotations; // Return a default value when no match is found
+            }
+        }
+
+        internal static string GetObjectTypeCodeByFormType(string formType)
+        {
+            switch (formType)
+            {
+                case "149":
+                    return "OQUT";  // Quotations
+                case "139":
+                    return "ORDR";  // Sales Orders
+        
+                default:
+                    return string.Empty;
+            }
+        }
+
+        internal static void UpdateSAPDocument(QuoteCalculator.QCResults unloadResults)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
+            int docLine = -1;
+            int docEntry = -1;
+            int visOrder = -1;
+            string SapObj = "-1";
+            string sSql = $"select \"U_bsDocEntry\",\"U_bsLineNum\",\"U_bsObjType\" from \"@STXQC19\" where \"DocEntry\" = '{unloadResults.QCID}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                docEntry = (int)rs.Fields.Item("U_bsDocEntry").Value;
+                docLine = (int)rs.Fields.Item("U_bsLineNum").Value;
+                SapObj = (string)rs.Fields.Item("U_bsObjType").Value;
+            }
+
+
+            BoObjectTypes objectType = GetSAPObjectType(SapObj);
+            string strObjType = GetSAPObjectLineStr(objectType);
+
+            string sSql2 = $"select \"VisOrder\" from {strObjType} where DocEntry = '{docEntry}' and LineNum = '{docLine}'  and U_STXQC19ID = '{unloadResults.QCID}'";
+            Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs2.DoQuery(sSql2);
+
+            if (!rs2.EoF)
+            {
+                visOrder = (int)rs2.Fields.Item("VisOrder").Value;
+            }
+
+            Documents sapDoc = (Documents)Utils.oCompany.GetBusinessObject(objectType);
+            if (sapDoc.GetByKey(docEntry))
+            {
+                sapDoc.Lines.SetCurrentLine(visOrder); // SetCurrentLine is 0-based
+                sapDoc.Lines.UnitPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCuPrice, sapNumberFormat);
+                sapDoc.Lines.GrossBuyPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCcPrice, sapNumberFormat);
+                sapDoc.Lines.UserFields.Fields.Item("U_STXToolNum").Value = unloadResults.QCtNum;
+                sapDoc.Lines.UserFields.Fields.Item("U_STXPartNum").Value = unloadResults.QCptNum;
+                sapDoc.Lines.UserFields.Fields.Item("U_STXPartName").Value = unloadResults.QCprtName;
+                sapDoc.Lines.UserFields.Fields.Item("U_STXLeadTime").Value = unloadResults.QClTime;
+
+                if (sapDoc.Update() == 0)
+                {
+                    // Update successful
+                }
+                else
+                {
+                    string errorMessage = "";
+                    Program.SBO_Application.MessageBox(errorMessage);
+                }
+            }
+        }
+
+        private static string GetSAPObjectLineStr(BoObjectTypes objectType)
+        {
+            // Create a dictionary to map BoObjectTypes to their string representations
+            Dictionary<BoObjectTypes, string> objectMapping = new Dictionary<BoObjectTypes, string>
+            {
+                { BoObjectTypes.oQuotations, "QUT1" },
+                { BoObjectTypes.oOrders, "RDR1" },
+                { BoObjectTypes.oWorkOrders, "WOR1" }
+            };
+
+            // Use LINQ to find the key based on its value
+            var matchedType = objectMapping.FirstOrDefault(x => x.Key == objectType);
+
+            // If found, return the string value, else return default
+            return matchedType.Equals(default(KeyValuePair<BoObjectTypes, string>)) ? "QUT1" : matchedType.Value;  // Assuming "23" (oQuotations) as default
+        }
     }
 }

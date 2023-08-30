@@ -37,6 +37,8 @@ namespace STXGen2
         public static string currentWidth { get; private set; } = "";
         public static string currentHeight { get; private set; } = "";
 
+        public static QCResults UnloadResults { get; set; }
+
         public static string ToolfileName { get; private set; } = "";
         public static string parttDescr { get; set; } = "";
         public int lastBtnOpselection { get; private set; } = 0;
@@ -51,6 +53,7 @@ namespace STXGen2
         public static string mOperatinsListXML { get; set; }
 
         private SAPbouiCOM.EditText QCDocEntry;
+        private SAPbouiCOM.EditText BaseLine;
         private SAPbouiCOM.EditText QCItemCode;
         private SAPbouiCOM.EditText QCItemName;
 
@@ -145,17 +148,29 @@ namespace STXGen2
         private EditText QCTEst;
         private EditText QCTotalSC;
         private EditText EditText12;
-        private EditText EditText13;
+        private EditText QCLeadTime;
         private EditText EditText14;
         private UserDataSource oUserDataSource;
         private bool lostFocusQCLength = false;
         private bool lostFocusQCWidth = false;
         private bool lostFocusQCHeight = false;
 
-
+        public string ParentFormUID { get; set; }
 
         public QuoteCalculator()
         {
+
+        }
+        public class QCResults
+        {
+            public string QCID { get; set; }
+            public string QCLineN { get; set; }
+            public string QCuPrice { get; set; }
+            public string QCcPrice { get; set; }
+            public string QClTime { get; set; }
+            public string QCptNum { get; set; }
+            public string QCtNum { get; set; }
+            public string QCprtName { get; set; }
 
         }
 
@@ -230,7 +245,7 @@ namespace STXGen2
             this.QCTotalSCF = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalSCF").Specific));
             this.QCTotalSC = ((SAPbouiCOM.EditText)(this.GetItem("QCTotalSC").Specific));
             this.EditText12 = ((SAPbouiCOM.EditText)(this.GetItem("Item_17").Specific));
-            this.EditText13 = ((SAPbouiCOM.EditText)(this.GetItem("Item_18").Specific));
+            this.QCLeadTime = ((SAPbouiCOM.EditText)(this.GetItem("QCLeadTime").Specific));
             this.EditText14 = ((SAPbouiCOM.EditText)(this.GetItem("Item_19").Specific));
             this.UnPrice = ((SAPbouiCOM.EditText)(this.GetItem("UnPrice").Specific));
             this.UnPrice.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.UnPrice_LostFocusAfter);
@@ -285,8 +300,32 @@ namespace STXGen2
             this.LinkedButton2 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_21").Specific));
             this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
             this.EditText16 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
+            this.BaseLine = ((SAPbouiCOM.EditText)(this.GetItem("BaseLine").Specific));
             this.OnCustomInitialize();
 
+        }
+
+        internal string AddUDO(string docEntry, string objType, string mLinenum)
+        {
+            BoObjectTypes objectType =DBCalls.GetSAPObjectType(objType);
+            SAPbobsCOM.Documents doc = (SAPbobsCOM.Documents)Utils.oCompany.GetBusinessObject(objectType);
+
+            SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+            SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+            SAPbobsCOM.GeneralData oGeneralData = (SAPbobsCOM.GeneralData)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralData);
+            SAPbobsCOM.GeneralDataParams oGeneralParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+
+            #region Add new QcID
+
+            oGeneralData.SetProperty("U_bsObjType", doc.DocObjectCodeEx);
+            oGeneralData.SetProperty("U_bsDocEntry", docEntry);
+            oGeneralData.SetProperty("U_bsLineNum", mLinenum);
+
+            var response = oGeneralService.Add(oGeneralData);
+            string DocEntry = response.GetProperty("DocEntry").ToString();
+
+            #endregion 
+            return DocEntry;
         }
 
 
@@ -297,7 +336,7 @@ namespace STXGen2
         public override void OnInitializeFormEvents()
         {
             this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
-
+            this.UnloadBefore += new SAPbouiCOM.Framework.FormBase.UnloadBeforeHandler(this.Form_UnloadBefore);
         }
 
 
@@ -305,10 +344,10 @@ namespace STXGen2
         {
             try
             {
-                SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
 
+                //SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
                 this.UIAPIRawForm.Freeze(true);
-
+                formUpdateTrigger = false;
                 SetFormModeToFind();
                 LoadDocumentAndBindMatrix(qcid);
                 ParseExchangeRate(exRate);
@@ -319,7 +358,7 @@ namespace STXGen2
                 MatrixSorting();
                 this.Show();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log error here and show a user-friendly message
                 System.Windows.Forms.MessageBox.Show("An error occurred while loading the form. Please try again.");
@@ -794,7 +833,7 @@ namespace STXGen2
                         return;
                     }
                 }
-                
+                formUpdateTrigger = true;
 
             }
 
@@ -1065,42 +1104,55 @@ namespace STXGen2
 
         private void BtnGetOPC_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
-
-            int noperations = mOperations.RowCount;
-            switch (lastBtnOpselection)
+            try
             {
-                case 0:
-                    if (noperations > 0)
-                    {
-                        bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
-                        if (confirmGetOper)
+                this.UIAPIRawForm.Freeze(true);
+                int noperations = mOperations.RowCount;
+                switch (lastBtnOpselection)
+                {
+                    case 0:
+                        if (noperations > 0)
+                        {
+                            bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
+                            if (confirmGetOper)
+                            {
+                                if (this.DefBOM.Checked == true)
+                                {
+                                    DefBOM.Checked = false;
+                                }
+
+                                this.mOperations.Clear();
+                                QCEvents.GetOperations(this.UIAPIRawForm);
+                                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                            }
+                        }
+                        else
                         {
                             if (this.DefBOM.Checked == true)
                             {
                                 DefBOM.Checked = false;
                             }
-
                             this.mOperations.Clear();
                             QCEvents.GetOperations(this.UIAPIRawForm);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
-                    }
-                    else
-                    {
-                        if (this.DefBOM.Checked == true)
+                        break;
+                    case 1:
+                        if (noperations > 0)
                         {
-                            DefBOM.Checked = false;
+                            bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
+                            if (confirmGetOper)
+                            {
+                                if (this.DefBOM.Checked == true)
+                                {
+                                    DefBOM.Checked = false;
+                                }
+                                this.mOperations.Clear();
+                                QCEvents.GetOperationsGrp(this.UIAPIRawForm);
+                                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                            }
                         }
-                        this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm);
-                        QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
-                    }
-                    break;
-                case 1:
-                    if (noperations > 0)
-                    {
-                        bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
-                        if (confirmGetOper)
+                        else
                         {
                             if (this.DefBOM.Checked == true)
                             {
@@ -1110,23 +1162,23 @@ namespace STXGen2
                             QCEvents.GetOperationsGrp(this.UIAPIRawForm);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
-                    }
-                    else
-                    {
-                        if (this.DefBOM.Checked == true)
+                        break;
+                    default:
+                        if (noperations > 0)
                         {
-                            DefBOM.Checked = false;
+                            bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
+                            if (confirmGetOper)
+                            {
+                                if (this.DefBOM.Checked == true)
+                                {
+                                    DefBOM.Checked = false;
+                                }
+                                this.mOperations.Clear();
+                                QCEvents.GetOperations(this.UIAPIRawForm);
+                                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                            }
                         }
-                        this.mOperations.Clear();
-                        QCEvents.GetOperationsGrp(this.UIAPIRawForm);
-                        QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
-                    }
-                    break;
-                default:
-                    if (noperations > 0)
-                    {
-                        bool confirmGetOper = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
-                        if (confirmGetOper)
+                        else
                         {
                             if (this.DefBOM.Checked == true)
                             {
@@ -1136,19 +1188,17 @@ namespace STXGen2
                             QCEvents.GetOperations(this.UIAPIRawForm);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
-                    }
-                    else
-                    {
-                        if (this.DefBOM.Checked == true)
-                        {
-                            DefBOM.Checked = false;
-                        }
-                        this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm);
-                        QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
-                    }
-                    break;
+                        break;
+                }
             }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                this.UIAPIRawForm.Freeze(false);
+            }
+          
         }
 
         private void mOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
@@ -1401,6 +1451,7 @@ namespace STXGen2
             }
             finally
             {
+                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                 this.UIAPIRawForm.Freeze(false);
                 this.UIAPIRawForm.Update();
             }
@@ -1699,6 +1750,7 @@ namespace STXGen2
         private LinkedButton LinkedButton2;
         private StaticText StaticText19;
         private EditText EditText16;
+        private bool formUpdateTrigger;
 
         private void mOperations_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
@@ -1740,5 +1792,34 @@ namespace STXGen2
                 lostFocusCovA = true;
             }
         }
+
+        private void Form_UnloadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            UnloadResults = new QCResults
+            {
+                QCID = this.QCDocEntry.Value,
+                QCLineN = this.BaseLine.Value,
+                QCuPrice = this.UnPrice.Value,  
+                QClTime = this.QCLeadTime.Value,  
+                QCcPrice = this.QCTEst.Value,
+                QCtNum = this.QCToolNum.Value,
+                QCptNum = this.QCPartNum.Value,
+                QCprtName = this.QCPartName.Value
+            };
+            if (formUpdateTrigger == true)
+            {
+                DBCalls.UpdateSAPDocument(UnloadResults);
+
+                if (!string.IsNullOrEmpty(ParentFormUID))
+                {
+                    SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(ParentFormUID);
+                    parentForm.Select();
+                    Program.SBO_Application.ActivateMenuItem("1304");
+                }
+            }
+            
+        }
+
     }
 }
