@@ -671,5 +671,31 @@ namespace STXGen2
             // If found, return the string value, else return default
             return matchedType.Equals(default(KeyValuePair<BoObjectTypes, string>)) ? "QUT1" : matchedType.Value;  // Assuming "23" (oQuotations) as default
         }
+
+
+        internal static (string sMkSeg1Name,string sMkseg1ID, string sBrandName,string sBrandID, string sOEM, string sOEMProgram, string sGKAM)? GetDataByNBO(string sNbo)
+        {
+    
+            string sSql = $"select T0.\"Code\", COALESCE(T0.\"U_BrandName\", '') as \"U_BrandName\",Coalesce(T1.\"Code\",'') as \"BrandID\",COALESCE(T1.\"U_MkSeg1Name\", '') as \"U_MkSeg1Name\",Coalesce(T1.\"U_Mkseg1\",'') as \"MKSeg1ID\", COALESCE(T1.\"U_OEM\",'') as \"OEM\", COALESCE(T1.\"U_GKAM\",'') as \"GKAM\", Case When Coalesce(T0.\"U_NickName\",'') = '' then Case When Coalesce(T0.\"U_BrandName\",'') = '' then coalesce(T0.\"U_Program\",'') else concat ( T0.\"U_BrandName\",' - ',T0.\"U_Program\") end else concat(T0.\"U_NickName\", ' - ', T0.\"U_BrandName\",' - ',T0.\"U_Program\") end as \"OEM Program\" from \"@STXIXXNBO\" T0 left join \"@STXIXXBRAND\" T1 on T0.\"U_BrandID\" = T1.\"Code\" WHERE T0.\"Code\" = '{sNbo}' ";
+
+            SAPbobsCOM.Recordset oRs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+
+            oRs.DoQuery(sSql);
+
+            if (!oRs.EoF)
+            {
+                return (
+                    oRs.Fields.Item("U_MkSeg1Name").Value.ToString(),
+                    oRs.Fields.Item("MKSeg1ID").Value.ToString(),
+                    oRs.Fields.Item("U_BrandName").Value.ToString(),
+                    oRs.Fields.Item("BrandID").Value.ToString(),
+                    oRs.Fields.Item("OEM").Value.ToString(),
+                    oRs.Fields.Item("OEM Program").Value.ToString(),
+                    oRs.Fields.Item("GKAM").Value.ToString()
+                );
+            }
+
+            return null;
+        }
     }
 }

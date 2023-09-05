@@ -30,5 +30,21 @@ namespace STXGen2
 
             return itemsList;
         }
+
+        internal static void DisableNBOinfo(IForm UIAPIRawForm)
+        {
+            SAPbouiCOM.Item eMkseg1 = UIAPIRawForm.Items.Item("MKSeg1");
+            eMkseg1.Enabled = false;
+            SAPbouiCOM.Item eBrand = UIAPIRawForm.Items.Item("STXBrand");
+            eBrand.Enabled = false;
+        }
+
+        internal static void EnableNBOinfo(IForm UIAPIRawForm)
+        {
+            SAPbouiCOM.Item eMkseg1 = UIAPIRawForm.Items.Item("MKSeg1");
+            eMkseg1.Enabled = true;
+            SAPbouiCOM.Item eBrand = UIAPIRawForm.Items.Item("STXBrand");
+            eBrand.Enabled = true;
+        }
     }
 }

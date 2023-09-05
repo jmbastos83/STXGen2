@@ -21,7 +21,6 @@ namespace STXGen2
                 Application oApp = null;
                 if (args.Length < 1)
                 {
-
                     oApp = new Application();
                 }
                 else

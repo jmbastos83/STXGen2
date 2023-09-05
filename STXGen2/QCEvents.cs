@@ -1026,5 +1026,9 @@ namespace STXGen2
 
         }
 
+        internal static string ValidateRowInfo(string resCode)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
