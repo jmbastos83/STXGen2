@@ -173,54 +173,103 @@ namespace STXGen2
 
         internal static string GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM)
         {
+            string query = "";
+            if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
+            {
+                query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"VisOrder\",X0.\"Texture\" as \"U_Texture\",X0.\"U_operationResource\" as \"U_resCode\",X0.\"ResName\" as \"U_resName\",X0.\"U_operationCode\" as \"U_opCode\",\n" +
+                               "X0.\"U_STXOPDes\" as \"U_opDesc\",X0.\"U_STXOPDesLocal\" as \"U_opDescL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_sugQty\",\n" +
+                               "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_Quantity\",X0.\"UnitOfMsr\" as \"U_UOM\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_Price\",\n" +
+                               "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_LineTot\",\n" +
+                               "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"U_ErrMsg\",\n" +
+                               "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"U_seq\" from(\n" +
+                               "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
+                               "R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",sum(R0.\"Quantity\") as \"Quantity\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\", 1 as \"TClassFactor\",R1.\"ResCost\",R1.\"UnitOfMsr\",sum(R0.\"NTimes\") as \"NTimes\"\n" +
+                               "from(\n" +
+                               "select  1 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\" , T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T1.\"Code\" as \"U_operationResource\", T1.\"U_STXOPCode\" as \"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", 1 as \"CalcFactor\",\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",1 as \"Quantity\",1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "left join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ('')) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T1.\"U_STXOPCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'I' \n" +
 
+                               "union all\n" +
 
-            string query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"VisOrder\",X0.\"Texture\" as \"U_Texture\",X0.\"U_operationResource\" as \"U_resCode\",X0.\"ResName\" as \"U_resName\",X0.\"U_operationCode\" as \"U_opCode\",\n" +
-                           "X0.\"U_STXOPDes\" as \"U_opDesc\",X0.\"U_STXOPDesLocal\" as \"U_opDescL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_sugQty\",\n" +
-                           "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_Quantity\",X0.\"UnitOfMsr\" as \"U_UOM\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_Price\",\n" +
-                           "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_LineTot\",\n" +
-                           "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"U_ErrMsg\",\n" +
-                           "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"U_seq\" from(\n" +
-                           "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
-                           "R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",sum(R0.\"Quantity\") as \"Quantity\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",{3},R1.\"ResCost\",R1.\"UnitOfMsr\",sum(R0.\"NTimes\") as \"NTimes\"\n" +
-                           "from(\n" +
-                           "select  1 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\" , T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
-                           "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
-                           "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
-                           "from OITT T0\n" +
-                           "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
-                           "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
-                           "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
-                           "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'I' \n" +
+                               "select  2 as \"Order\", T2.\"U_groupOrder\",Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T1.\"Code\" as \"U_operationResource\", T1.\"U_STXOPCode\" as \"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", 1 as \"CalcFactor\",\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",1 as \"Quantity\",1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "left join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ('')) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T1.\"U_STXOPCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" not in ('I', 'F') \n" +
 
-                           "union all\n" +
+                               "union all\n" +
 
-                           "select  2 as \"Order\", T2.\"U_groupOrder\",Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
-                           "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
-                           "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
-                           "from OITT T0\n" +
-                           "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
-                           "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
-                           "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
-                           "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" not in ('I', 'F') \n" +
+                               "select  3 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T1.\"Code\" as \"U_operationResource\", T1.\"U_STXOPCode\" as \"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", 1 as \"CalcFactor\",\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",1 as \"Quantity\",1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "left join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ('')) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T1.\"U_STXOPCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'F') as R0\n" +
+                               "left join (select \"ResCode\",\"ResName\",\"UnitOfMsr\",(\"StdCost1\"+\"StdCost2\"+\"StdCost3\"+\"StdCost4\"+\"StdCost5\"+\"StdCost6\"+\"StdCost7\"+\"StdCost8\"+\"StdCost9\"+\"StdCost10\") as \"ResCost\" from ORSC) R1 on R0.\"U_operationResource\" = R1.\"ResCode\"\n" +
+                               "group by R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END,R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\", R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",R1.\"ResCost\",R1.\"UnitOfMsr\") X0, OADM X1\n" +
+                               "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
 
-                           "union all\n" +
+                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM);
 
-                           "select  3 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
-                           "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
-                           "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
-                           "from OITT T0\n" +
-                           "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
-                           "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
-                           "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
-                           "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'F') as R0\n" +
-                           "left join (select \"ResCode\",\"ResName\",\"UnitOfMsr\",(\"StdCost1\"+\"StdCost2\"+\"StdCost3\"+\"StdCost4\"+\"StdCost5\"+\"StdCost6\"+\"StdCost7\"+\"StdCost8\"+\"StdCost9\"+\"StdCost10\") as \"ResCost\" from ORSC) R1 on R0.\"U_operationResource\" = R1.\"ResCode\"\n" +
-                           "group by R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END,R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\", R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",R1.\"ResCost\",R1.\"UnitOfMsr\") X0, OADM X1\n" +
-                           "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
+            }
+            else
+            { 
+                query = "Select  ROW_NUMBER() OVER (ORDER BY X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\") AS \"VisOrder\",X0.\"Texture\" as \"U_Texture\",X0.\"U_operationResource\" as \"U_resCode\",X0.\"ResName\" as \"U_resName\",X0.\"U_operationCode\" as \"U_opCode\",\n" +
+                               "X0.\"U_STXOPDes\" as \"U_opDesc\",X0.\"U_STXOPDesLocal\" as \"U_opDescL\",CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_sugQty\",\n" +
+                               "CONVERT(nvarchar,cast(Round((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end),{5}) AS DECIMAL(18, {5}))) as \"U_Quantity\",X0.\"UnitOfMsr\" as \"U_UOM\",CONVERT(nvarchar,cast(Round((X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_Price\",\n" +
+                               "CONVERT(nvarchar,cast(Round(((Case when X0.\"U_STXQtyBy\" = 'A' then (X0.\"CalcFactor\" / X0.\"PlAvgSize\") * (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" else (X0.\"Quantity\" / X0.\"NTimes\") * X0.\"TClassFactor\" end) * X0.\"ResCost\"),{6}) AS DECIMAL(18, {6}))) as \"U_LineTot\",\n" +
+                               "Case when coalesce(isnull(X0.\"ResName\",''),'') = '' then '{8}' when coalesce(isnull(X0.\"U_STXOPDes\",''),'') = '' then '{9}' when(X0.\"U_STXQtyBy\" = 'A' and X0.\"CalcFactor\" = 0) then '{10}' when X0.\"ResCost\" = 0 then '{11}' end as \"U_ErrMsg\",\n" +
+                               "Case when X0.\"U_PlanType\" = 'I' then 0 when  X0.\"U_PlanType\" = 'F' then 99 else DENSE_RANK() OVER (order by X0.\"Texture\")-1 end as \"U_seq\" from(\n" +
+                               "Select R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END as \"U_groupOrder\",R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\",\n" +
+                               "R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",sum(R0.\"Quantity\") as \"Quantity\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",{3},R1.\"ResCost\",R1.\"UnitOfMsr\",sum(R0.\"NTimes\") as \"NTimes\"\n" +
+                               "from(\n" +
+                               "select  1 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\" , T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'I' \n" +
 
-            query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM);
+                               "union all\n" +
 
+                               "select  2 as \"Order\", T2.\"U_groupOrder\",Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" not in ('I', 'F') \n" +
 
+                               "union all\n" +
+
+                               "select  3 as \"Order\", T2.\"U_groupOrder\", Case When '{12}' = 'True' then T1.\"VisOrder\" else T2.\"U_operationOrder\" end as \"U_operationOrder\", T3.\"U_PlanType\", Case when T3.\"U_PlanType\" = 'I' or T3.\"U_PlanType\" = 'F' then null else\n" +
+                               "T2.\"U_standexReference\" end as \"Texture\",T2.\"U_operationResource\", T2.\"U_operationCode\", T3.\"U_STXOPDes\", T3.\"U_STXOPDesLocal\", {0},\n" +
+                               "T1.\"U_STXQtyBy\",T0.\"PlAvgSize\",{4},1 as \"NTimes\"\n" +
+                               "from OITT T0\n" +
+                               "inner join ITT1 T1 on T0.\"Code\" = T1.\"Father\"\n" +
+                               "inner join(select * from \"@STXSETPTEXTURETASKS\" where \"U_standexReference\" in ({1})) T2 on T1.\"U_STXOPCode\" = T2.\"U_operationCode\"\n" +
+                               "left join \"@STXOPERATIONS\" T3 on T2.\"U_operationCode\"= T3.\"Code\"\n" +
+                               "where T0.\"Code\" = '{2}' and T3.\"U_PlanType\" = 'F') as R0\n" +
+                               "left join (select \"ResCode\",\"ResName\",\"UnitOfMsr\",(\"StdCost1\"+\"StdCost2\"+\"StdCost3\"+\"StdCost4\"+\"StdCost5\"+\"StdCost6\"+\"StdCost7\"+\"StdCost8\"+\"StdCost9\"+\"StdCost10\") as \"ResCost\" from ORSC) R1 on R0.\"U_operationResource\" = R1.\"ResCode\"\n" +
+                               "group by R0.\"Order\",CASE WHEN R0.\"U_PlanType\" = 'N' then R0.\"U_groupOrder\" else NULL END,R0.\"U_operationOrder\", R0.\"U_PlanType\",R0.\"Texture\",R0.\"U_operationResource\",R1.\"ResName\",R0.\"U_operationCode\", R0.\"U_STXOPDes\",R0.\"U_STXOPDesLocal\",R0.\"PlAvgSize\",R0.\"U_STXQtyBy\",R0.\"CalcFactor\",R1.\"ResCost\",R1.\"UnitOfMsr\") X0, OADM X1\n" +
+                               "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
+
+                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM);
+
+            }
 
             try
             {
@@ -242,6 +291,20 @@ namespace STXGen2
                 Program.SBO_Application.SetStatusBarMessage(ex.Message);
                 return null;
             }
+        }
+
+        internal static void UpdateQCIDBaseDoc(string qcidValue, string sapdocEntry, string value)
+        {
+            SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+            SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+
+
+            SAPbobsCOM.GeneralDataParams oParameters = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+            oParameters.SetProperty("DocEntry", qcidValue);
+            SAPbobsCOM.GeneralData oldEntry = oGeneralService.GetByParams(oParameters);
+            oldEntry.SetProperty("U_bsDocEntry", sapdocEntry);
+
+            oGeneralService.Update(oldEntry);
         }
 
         internal static int getDocLineofQCID(string qcidValue, string sapdocEntry, string sapObjType)
@@ -294,7 +357,6 @@ namespace STXGen2
 
                     SAPbobsCOM.GeneralDataParams newEntryParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.Add(oldEntry);
 
-
                     // Get the DocEntry of the newly added record
                     string newEntryNumber = newEntryParams.GetProperty("DocEntry").ToString();
 
@@ -317,20 +379,18 @@ namespace STXGen2
 
 
                     // Remove or modify the specific child table data
-                    SAPbobsCOM.GeneralDataCollection childTable = oldEntry.Child("STXQC19O"); // Replace 'NameOfChildTableToExclude' with the actual child table's name
-                                                                                                               // Removing child table rows one by one
+                    SAPbobsCOM.GeneralDataCollection childTable = oldEntry.Child("STXQC19O"); 
+                                                                                                               
                     while (childTable.Count > 0)
                     {
-                        childTable.Remove(0); // Removes the first entry. As entries shift up, continuously removing the first entry will eventually clear the collection.
+                        childTable.Remove(0); 
                     }
-
 
                     oldEntry.SetProperty("U_bsLineNum", intLineNo);
                     oldEntry.SetProperty("U_bsDocEntry", sapdocEntry);
                     oldEntry.SetProperty("U_bsObjType", sapObjType);
 
                     SAPbobsCOM.GeneralDataParams newEntryParams = (SAPbobsCOM.GeneralDataParams)oGeneralService.Add(oldEntry);
-
 
                     // Get the DocEntry of the newly added record
                     string newEntryNumber = newEntryParams.GetProperty("DocEntry").ToString();
@@ -600,15 +660,20 @@ namespace STXGen2
             }
         }
 
-        internal static void UpdateSAPDocument(QuoteCalculator.QCResults unloadResults)
+        internal static void UpdateSAPDocument(QuoteCalculator.QCResults unloadResults,string sapDocEntry,string sapObjType,string sapDocLineNum)
         {
             System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
 
             int docLine = -1;
             int docEntry = -1;
             int visOrder = -1;
+            int? baseEntry = null;
             string SapObj = "-1";
-            string sSql = $"select \"U_bsDocEntry\",\"U_bsLineNum\",\"U_bsObjType\" from \"@STXQC19\" where \"DocEntry\" = '{unloadResults.QCID}'";
+            string tooln = "";
+            string pName = "";
+            string pNum = "";
+
+            string sSql = $"select \"U_bsDocEntry\",\"U_bsLineNum\",\"U_bsObjType\",\"U_ToolNum\",\"U_PartNum\",\"U_PartName\" from \"@STXQC19\" where \"DocEntry\" = '{unloadResults.QCID}'";
             Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
             rs.DoQuery(sSql);
 
@@ -617,40 +682,97 @@ namespace STXGen2
                 docEntry = (int)rs.Fields.Item("U_bsDocEntry").Value;
                 docLine = (int)rs.Fields.Item("U_bsLineNum").Value;
                 SapObj = (string)rs.Fields.Item("U_bsObjType").Value;
+
+                tooln = (string)rs.Fields.Item("U_ToolNum").Value;
+                pName = (string)rs.Fields.Item("U_PartName").Value;
+                pNum = (string)rs.Fields.Item("U_PartNum").Value;
             }
 
-
-            BoObjectTypes objectType = GetSAPObjectType(SapObj);
-            string strObjType = GetSAPObjectLineStr(objectType);
-
-            string sSql2 = $"select \"VisOrder\" from {strObjType} where DocEntry = '{docEntry}' and LineNum = '{docLine}'  and U_STXQC19ID = '{unloadResults.QCID}'";
-            Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
-            rs2.DoQuery(sSql2);
-
-            if (!rs2.EoF)
+            if (SapObj == sapObjType && docEntry == int.Parse(sapDocEntry))
             {
-                visOrder = (int)rs2.Fields.Item("VisOrder").Value;
-            }
+                BoObjectTypes objectType = GetSAPObjectType(SapObj);
+                string strObjType = GetSAPObjectLineStr(objectType);
 
-            Documents sapDoc = (Documents)Utils.oCompany.GetBusinessObject(objectType);
-            if (sapDoc.GetByKey(docEntry))
-            {
-                sapDoc.Lines.SetCurrentLine(visOrder); // SetCurrentLine is 0-based
-                sapDoc.Lines.UnitPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCuPrice, sapNumberFormat);
-                sapDoc.Lines.GrossBuyPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCcPrice, sapNumberFormat);
-                sapDoc.Lines.UserFields.Fields.Item("U_STXToolNum").Value = unloadResults.QCtNum;
-                sapDoc.Lines.UserFields.Fields.Item("U_STXPartNum").Value = unloadResults.QCptNum;
-                sapDoc.Lines.UserFields.Fields.Item("U_STXPartName").Value = unloadResults.QCprtName;
-                sapDoc.Lines.UserFields.Fields.Item("U_STXLeadTime").Value = unloadResults.QClTime;
+                string sSql2 = $"select \"VisOrder\",\"BaseEntry\" from {strObjType} where DocEntry = '{docEntry}' and LineNum = '{docLine}'  and U_STXQC19ID = '{unloadResults.QCID}'";
+                Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+                rs2.DoQuery(sSql2);
 
-                if (sapDoc.Update() == 0)
+                if (!rs2.EoF)
                 {
-                    // Update successful
+                    visOrder = (int)rs2.Fields.Item("VisOrder").Value;
+                    baseEntry = (int)rs2.Fields.Item("BaseEntry").Value;
+                }
+
+                if (pName == unloadResults.QCprtName && pNum == unloadResults.QCptNum && tooln == unloadResults.QCtNum && baseEntry == 0)
+                {
+                    Documents sapDoc = (Documents)Utils.oCompany.GetBusinessObject(objectType);
+                    if (sapDoc.GetByKey(docEntry))
+                    {
+                        sapDoc.Lines.SetCurrentLine(visOrder); // SetCurrentLine is 0-based
+                        sapDoc.Lines.UnitPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCuPrice, sapNumberFormat);
+                        sapDoc.Lines.GrossBuyPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCcPrice, sapNumberFormat);
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXToolNum").Value = unloadResults.QCtNum;
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXPartNum").Value = unloadResults.QCptNum;
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXPartName").Value = unloadResults.QCprtName;
+                        sapDoc.Lines.UserFields.Fields.Item("U_STXLeadTime").Value = unloadResults.QClTime;
+
+                        if (sapDoc.Update() == 0)
+                        {
+                            // Update successful
+                        }
+                        else
+                        {
+                            string errorMessage = "";
+                            Program.SBO_Application.MessageBox(errorMessage);
+                        }
+                    }
                 }
                 else
                 {
-                    string errorMessage = "";
-                    Program.SBO_Application.MessageBox(errorMessage);
+                    // add new qcid entry and update the document
+                }
+            }
+            else
+            {
+                if (pName == unloadResults.QCprtName && pNum == unloadResults.QCptNum && tooln == unloadResults.QCtNum)
+                {
+                    BoObjectTypes objectType = GetSAPObjectType(sapObjType);
+                    string strObjType = GetSAPObjectLineStr(objectType);
+
+                    string sSql2 = $"select \"VisOrder\" from {strObjType} where DocEntry = '{sapDocEntry}' and LineNum = '{sapDocLineNum}'  and U_STXQC19ID = '{unloadResults.QCID}'";
+                    Recordset rs2 = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+                    rs2.DoQuery(sSql2);
+
+                    if (!rs2.EoF)
+                    {
+                        visOrder = (int)rs2.Fields.Item("VisOrder").Value;
+                    }
+
+                    Documents sapDoc = (Documents)Utils.oCompany.GetBusinessObject(objectType);
+                    if (sapDoc.GetByKey(docEntry))
+                    {
+                        sapDoc.Lines.SetCurrentLine(visOrder); // SetCurrentLine is 0-based
+                        sapDoc.Lines.UnitPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCuPrice, sapNumberFormat);
+                        sapDoc.Lines.GrossBuyPrice = HelperMethods.ParseDoubleWCur(unloadResults.QCcPrice, sapNumberFormat);
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXToolNum").Value = unloadResults.QCtNum;
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXPartNum").Value = unloadResults.QCptNum;
+                        //sapDoc.Lines.UserFields.Fields.Item("U_STXPartName").Value = unloadResults.QCprtName;
+                        sapDoc.Lines.UserFields.Fields.Item("U_STXLeadTime").Value = unloadResults.QClTime;
+
+                        if (sapDoc.Update() == 0)
+                        {
+                            // Update successful
+                        }
+                        else
+                        {
+                            string errorMessage = "";
+                            Program.SBO_Application.MessageBox(errorMessage);
+                        }
+                    }
+                }
+                else
+                {
+                    // add new qcid entry and update the document
                 }
             }
         }

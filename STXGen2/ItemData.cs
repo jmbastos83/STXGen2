@@ -46,5 +46,35 @@ namespace STXGen2
             SAPbouiCOM.Item eBrand = UIAPIRawForm.Items.Item("STXBrand");
             eBrand.Enabled = true;
         }
+
+        internal static void QCIDColumnsDisable(IForm UIAPIRawForm)
+        {
+            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)UIAPIRawForm.Items.Item("38").Specific;
+            SAPbouiCOM.Column oColumn = oMatrix.Columns.Item("U_STXQC19ID");
+            oColumn.Editable = false;
+            oColumn = oMatrix.Columns.Item("U_STXToolNum");
+            oColumn.Editable = false;
+            oColumn = oMatrix.Columns.Item("U_STXPartNum");
+            oColumn.Editable = false;
+            oColumn = oMatrix.Columns.Item("U_STXPartName");
+            oColumn.Editable = false;
+            oColumn = oMatrix.Columns.Item("U_STXLeadTime");
+            oColumn.Editable = false;
+        }
+
+        internal static void QCIDColumnsEnable(IForm UIAPIRawForm)
+        {
+            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)UIAPIRawForm.Items.Item("38").Specific;
+            SAPbouiCOM.Column oColumn = oMatrix.Columns.Item("U_STXQC19ID");
+            oColumn.Editable = true;
+            oColumn = oMatrix.Columns.Item("U_STXToolNum");
+            oColumn.Editable = true;
+            oColumn = oMatrix.Columns.Item("U_STXPartNum");
+            oColumn.Editable = true;
+            oColumn = oMatrix.Columns.Item("U_STXPartName");
+            oColumn.Editable = true;
+            oColumn = oMatrix.Columns.Item("U_STXLeadTime");
+            oColumn.Editable = true;
+        }
     }
 }

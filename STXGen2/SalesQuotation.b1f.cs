@@ -58,6 +58,7 @@ namespace STXGen2
 
         private Button Button0;
         private bool isHistoric = false;
+        private bool addNewDocTrigger = false;
 
         private Matrix Matrix0;
         private ButtonCombo ButtonCombo0;
@@ -65,10 +66,11 @@ namespace STXGen2
         public string prevItemCode { get; private set; }
         public string STXQCID { get; private set; }
         public bool itmChange { get; private set; }
+        public static bool SOcopyToTrigger { get; set; }
 
         public SystemForm1()
         {
-
+            SOcopyToTrigger = false;
         }
 
         /// <summary>
@@ -76,7 +78,8 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeComponent()
         {
-            
+            this.ComboBox1 = ((SAPbouiCOM.ComboBox)(this.GetItem("10000329").Specific));
+            this.ComboBox1.ComboSelectBefore += new SAPbouiCOM._IComboBoxEvents_ComboSelectBeforeEventHandler(this.ComboBox1_ComboSelectBefore);
             this.OnCustomInitialize();
 
         }
@@ -94,50 +97,20 @@ namespace STXGen2
 
         private void OnCustomInitialize()
         {
-            this.stxMKSeg1 = ((SAPbouiCOM.EditText)(this.GetItem("MKSeg1").Specific));
-            this.stxMKSeg1.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSeg1_ChooseFromListAfter);
-            this.stxMKSEG2 = ((SAPbouiCOM.EditText)(this.GetItem("MKSEG2").Specific));
-            this.stxMKSEG2.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSEG2_ChooseFromListAfter);
-            this.stxMKSEG2.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxMKSEG2_ChooseFromListBefore);
-            this.stxBrand = ((SAPbouiCOM.EditText)(this.GetItem("STXBrand").Specific));
-            this.stxBrand.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxBrand_ChooseFromListAfter);
-            this.stxBrand.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxBrand_ChooseFromListBefore);
-            this.stxNBOID = ((SAPbouiCOM.EditText)(this.GetItem("NBOID").Specific));
-            this.stxNBOID.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxNBOID_ChooseFromListAfter);
-            this.stxNBOID.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxNBOID_ChooseFromListBefore);
-            this.stxOEMPgm = ((SAPbouiCOM.EditText)(this.GetItem("OEMPgm").Specific));
-            this.stxOEM = ((SAPbouiCOM.EditText)(this.GetItem("OEM").Specific));
-            this.stxGKAM = ((SAPbouiCOM.EditText)(this.GetItem("GKAM").Specific));
-            this.Matrix0 = ((SAPbouiCOM.Matrix)(this.GetItem("38").Specific));
-            this.Matrix0.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.Matrix0_GotFocusAfter);
-            this.Matrix0.ChooseFromListBefore += new SAPbouiCOM._IMatrixEvents_ChooseFromListBeforeEventHandler(this.Matrix0_ChooseFromListBefore);
-            this.Matrix0.PickerClickedBefore += new SAPbouiCOM._IMatrixEvents_PickerClickedBeforeEventHandler(this.Matrix0_PickerClickedBefore);
-            this.Matrix0.KeyDownBefore += new SAPbouiCOM._IMatrixEvents_KeyDownBeforeEventHandler(this.Matrix0_KeyDownBefore);
-            this.Matrix0.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.Matrix0_ChooseFromListAfter);
+
             this.ButtonCombo0 = this.GetItem("1").Specific as SAPbouiCOM.ButtonCombo;
             if (this.ButtonCombo0 != null)
             {
                 isHistoric = false;
                 this.ButtonCombo0 = ((SAPbouiCOM.ButtonCombo)(this.GetItem("1").Specific));
                 this.ButtonCombo0.PressedBefore += new SAPbouiCOM._IButtonComboEvents_PressedBeforeEventHandler(this.ButtonCombo0_PressedBefore);
+                this.ButtonCombo0.PressedAfter += new SAPbouiCOM._IButtonComboEvents_PressedAfterEventHandler(this.ButtonCombo0_PressedAfter);
             }
             else
             {
                 isHistoric = true;
             }
-            this.StaticText0 = ((SAPbouiCOM.StaticText)(this.GetItem("lMKSeg1").Specific));
-            this.StaticText1 = ((SAPbouiCOM.StaticText)(this.GetItem("lMKSEG2").Specific));
-            this.StaticText2 = ((SAPbouiCOM.StaticText)(this.GetItem("lSTXBrand").Specific));
-            this.StaticText3 = ((SAPbouiCOM.StaticText)(this.GetItem("lNBOID").Specific));
-            this.StaticText4 = ((SAPbouiCOM.StaticText)(this.GetItem("lOEMPgm").Specific));
-            this.StaticText5 = ((SAPbouiCOM.StaticText)(this.GetItem("lOEM").Specific));
-            this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("lGKAM").Specific));
-            this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("ClrNBO").Specific));
-            this.Button0.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button0_PressedAfter);
-            this.stxMK1ID = ((SAPbouiCOM.EditText)(this.GetItem("MK1ID").Specific));
-            this.stxMK2ID = ((SAPbouiCOM.EditText)(this.GetItem("MK2ID").Specific));
-            this.stxBrandID = ((SAPbouiCOM.EditText)(this.GetItem("BrandID").Specific));
-            this.stxRevision = ((SAPbouiCOM.EditText)(this.GetItem("Revision").Specific));
+            ItemData.QCIDColumnsDisable(this.UIAPIRawForm);
         }
 
         private void Matrix0_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
@@ -189,7 +162,6 @@ namespace STXGen2
         {
             try
             {
-
                 if (pVal.ItemUID == "38" && (pVal.ColUID == "1" || pVal.ColUID == "3") && isChooseFromListPickerTriggered == true && isChooseFromListTriggered == false && isUpdatingDimensions == false && itmChange == true)
                 {
                     isChooseFromListPickerTriggered = false;
@@ -216,7 +188,6 @@ namespace STXGen2
                 SAPbouiCOM.Matrix itemsMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
                 SAPbouiCOM.EditText itemCode = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("1").Cells.Item(row).Specific;
                 SAPbouiCOM.EditText intLineNo = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("110").Cells.Item(row).Specific;
-                SAPbouiCOM.EditText qcidCell = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("U_STXQC19ID").Cells.Item(row).Specific;
 
                 string currentItemCode = selectedItem.ItemCode;
 
@@ -225,26 +196,19 @@ namespace STXGen2
                     bool confirmGetOper = Program.SBO_Application.MessageBox("Do you want to keep all tool information?", 1, "Yes", "No") == 1;
                     if (confirmGetOper)
                     {
-                        QCIDColumnsEnable();
-                        //this.UIAPIRawForm.Freeze(true);
-                        SAPbouiCOM.EditText toolNum = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("U_STXToolNum").Cells.Item(row).Specific;
-                        SAPbouiCOM.EditText partNum = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("U_STXPartNum").Cells.Item(row).Specific;
-                        SAPbouiCOM.EditText partName = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("U_STXPartName").Cells.Item(row).Specific;
-                        SAPbouiCOM.EditText leadTime = (SAPbouiCOM.EditText)itemsMatrix.Columns.Item("U_STXLeadTime").Cells.Item(row).Specific;
-
-                        toolNum.Value = prevToolNum;
-                        partNum.Value = prevPartNum;
-                        partName.Value = prevPartName;
-                        leadTime.Value = prevLeadTime;
+                        ItemData.QCIDColumnsEnable(this.UIAPIRawForm);
+                  
+                        itemsMatrix.SetCellWithoutValidation(row, "U_STXToolNum", prevToolNum);
+                        itemsMatrix.SetCellWithoutValidation(row, "U_STXPartNum", prevPartNum);
+                        itemsMatrix.SetCellWithoutValidation(row, "U_STXPartName", prevPartName);
+                        itemsMatrix.SetCellWithoutValidation(row, "U_STXLeadTime", prevLeadTime);
 
                         string newQCID = DBCalls.duplicateQCID(STXQCID, sapdocEntry, sapObjType, intLineNo.Value, itmChange);
-
-                        qcidCell.Active = true;
-                        qcidCell.Value = newQCID;
-                        //this.UIAPIRawForm.Freeze(false);
+                        itemsMatrix.SetCellWithoutValidation(row, "U_STXQC19ID", newQCID);
+                   
                     }
                     itemCode.Active = true;
-                    QCIDColumnsDisable();
+                    ItemData.QCIDColumnsDisable(this.UIAPIRawForm);
                     itmChange = false;
                 }
             }
@@ -354,7 +318,7 @@ namespace STXGen2
 
                 if (pVal.FormMode == 3)
                 {
-
+                    addNewDocTrigger = true;
                     string qcidValue = "";
                     SAPbouiCOM.Matrix matrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
 
@@ -368,7 +332,7 @@ namespace STXGen2
 
                             qcidValue = qcidCell.Value;
                             string newQCID = DBCalls.duplicateQCID(qcidValue, sapdocEntry, sapObjType, intLineNo.Value, itmChange);
-                            qcidCell.Value = newQCID;
+                            matrix.SetCellWithoutValidation(i, "U_STXQC19ID", newQCID);
                         }
                     }
                 }
@@ -395,6 +359,44 @@ namespace STXGen2
                                     qcidCell.Value = newQCID;
                                 }
                             }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                SAPbouiCOM.Framework.Application.SBO_Application.StatusBar.SetText(ex.Message, BoMessageTime.bmt_Short, BoStatusBarMessageType.smt_Error);
+            }
+            finally
+            {
+                this.UIAPIRawForm.Freeze(false);
+            }
+        }
+
+        private void ButtonCombo0_PressedAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            try
+            {
+                this.UIAPIRawForm.Freeze(true);
+
+                SAPbouiCOM.DBDataSource oDBDS = this.UIAPIRawForm.DataSources.DBDataSources.Item("OQUT");
+                string sapdocEntry = oDBDS.GetValue("DocEntry", 0);
+                string sapObjType = oDBDS.GetValue("ObjType", 0);
+
+                if (pVal.FormMode == 1 && addNewDocTrigger == true)
+                {
+                    addNewDocTrigger = false;
+                    string qcidValue = "";
+                    SAPbouiCOM.Matrix matrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
+
+                    for (int i = 1; i <= matrix.RowCount; i++)
+                    {
+                        SAPbouiCOM.EditText qcidCell = (SAPbouiCOM.EditText)matrix.Columns.Item("U_STXQC19ID").Cells.Item(i).Specific;
+                        SAPbouiCOM.EditText intLineNo = (SAPbouiCOM.EditText)matrix.Columns.Item("110").Cells.Item(i).Specific;
+                        if (!string.IsNullOrEmpty(qcidCell.Value))
+                        {
+                            qcidValue = qcidCell.Value;
+                            DBCalls.UpdateQCIDBaseDoc(qcidValue, sapdocEntry,intLineNo.Value);
                         }
                     }
                 }
@@ -443,42 +445,12 @@ namespace STXGen2
 
         private void Form_LoadAfter(SBOItemEventArg pVal)
         {
-            QCIDColumnsDisable();
+            ItemData.QCIDColumnsDisable(this.UIAPIRawForm);
             if (pVal.FormMode == 3)
             {
                 stxRevision.Value = "A";
             }
 
-        }
-
-        private void QCIDColumnsDisable()
-        {
-            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
-            SAPbouiCOM.Column oColumn = oMatrix.Columns.Item("U_STXQC19ID");
-            oColumn.Editable = false;
-            oColumn = oMatrix.Columns.Item("U_STXToolNum");
-            oColumn.Editable = false;
-            oColumn = oMatrix.Columns.Item("U_STXPartNum");
-            oColumn.Editable = false;
-            oColumn = oMatrix.Columns.Item("U_STXPartName");
-            oColumn.Editable = false;
-            oColumn = oMatrix.Columns.Item("U_STXLeadTime");
-            oColumn.Editable = false;
-        }
-
-        private void QCIDColumnsEnable()
-        {
-            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
-            SAPbouiCOM.Column oColumn = oMatrix.Columns.Item("U_STXQC19ID");
-            oColumn.Editable = true;
-            oColumn = oMatrix.Columns.Item("U_STXToolNum");
-            oColumn.Editable = true;
-            oColumn = oMatrix.Columns.Item("U_STXPartNum");
-            oColumn.Editable = true;
-            oColumn = oMatrix.Columns.Item("U_STXPartName");
-            oColumn.Editable = true;
-            oColumn = oMatrix.Columns.Item("U_STXLeadTime");
-            oColumn.Editable = true;
         }
 
         private void Form_ResizeAfter(SBOItemEventArg pVal)
@@ -709,6 +681,27 @@ namespace STXGen2
             finally
             {
                 this.UIAPIRawForm.Freeze(false);
+            }
+
+        }
+
+        private ComboBox ComboBox1;
+
+        private void ComboBox1_ComboSelectBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            if (ComboBox1 != null)
+            {
+                // To get the currently selected value before the change
+                string currentValue = ComboBox1.Value;
+
+                // To get the newly selected value 
+                string newValue = ComboBox1.ValidValues.Item(pVal.PopUpIndicator).Value;
+
+                if (currentValue == "Copy To" && newValue == "Sales Order")
+                {
+                    SOcopyToTrigger = true;
+                }
             }
 
         }

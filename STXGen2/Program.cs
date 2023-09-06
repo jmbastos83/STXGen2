@@ -31,6 +31,8 @@ namespace STXGen2
                 }
 
                 SBO_Application = Application.SBO_Application;
+                // Register the Items event handler
+                //SBO_Application.ItemEvent += new SAPbouiCOM._IApplicationEvents_ItemEventEventHandler(SAPEvents.SBO_Application_ItemEvent);
                 // Register the Application event handler
                 SBO_Application.AppEvent += new SAPbouiCOM._IApplicationEvents_AppEventEventHandler(SAPEvents.SBO_Application_AppEvent);
                 // Register the Menu event handler

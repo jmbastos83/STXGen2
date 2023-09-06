@@ -50,6 +50,9 @@
   <ItemGroup>
     <Compile Include="ItemData.cs" />
     <Compile Include="SAPForms.cs" />
+    <Compile Include="SalesOrder.b1f.cs">
+      <DependentUpon>SalesOrder.b1f</DependentUpon>
+    </Compile>
     <Compile Include="TempDataTable.cs" />
     <Compile Include="TempDataTableCell.cs" />
     <Compile Include="TempDataTableCells.cs" />
@@ -92,6 +95,12 @@
     </None>
     <None Include="SalesQuotation.b1f__orig_srf">
       <DependentUpon>SalesQuotation.b1f</DependentUpon>
+    </None>
+    <None Include="SalesOrder.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="SalesOrder.b1f__orig_srf">
+      <DependentUpon>SalesOrder.b1f</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>

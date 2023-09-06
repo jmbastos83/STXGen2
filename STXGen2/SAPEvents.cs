@@ -106,6 +106,16 @@ namespace STXGen2
             }
         }
 
+        //internal static void SBO_Application_ItemEvent(string FormUID, ref ItemEvent pVal, out bool BubbleEvent)
+        //{
+        //    BubbleEvent = true;
+        //    if (pVal.ItemUID == "10000329" && pVal.EventType == BoEventTypes.et_COMBO_SELECT && pVal.PopUpIndicator == 0)
+        //    {
+
+        //    }
+            
+        //}
+
         internal static void SBO_Application_MenuEvent(ref MenuEvent pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
@@ -177,10 +187,17 @@ namespace STXGen2
 
                         activeForm.Items.Item("1").Click();
                         mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
-                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate);
+                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
                     }
                     else
                     {
+                        string formTypeEx = activeForm.TypeEx;
+                        string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
+
+                        SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
+                        string DocEntry = oDBDS.GetValue("DocEntry", 0);
+                        string ObjType = oDBDS.GetValue("ObjType", 0);
+
                         frmQCalc = new QuoteCalculator();
 
                         frmQCalc.ParentFormUID = activeForm.UniqueID;
@@ -188,7 +205,7 @@ namespace STXGen2
                         {
                             activeForm.Items.Item("1").Click();
                         }
-                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate);
+                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
                     }
 
                 }

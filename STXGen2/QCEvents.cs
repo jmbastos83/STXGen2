@@ -502,62 +502,7 @@ namespace STXGen2
             uIAPIRawForm.Freeze(false);
         }
 
-        //internal static void OperationsTotalSubCFilter(IForm uIAPIRawForm, string selectedValue)
-        //{
-        //    System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
-        //    double total = 0;
-
-        //    SAPbouiCOM.Matrix mOperations = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
-
-        //    if (selectedValue != "-1")
-        //    {
-        //        for (int i = 1; i <= mOperations.RowCount; i++)
-        //        {
-        //            if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPSeq").Cells.Item(i).Specific).Value == selectedValue && ((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
-        //            {
-        //                SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
-        //                total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
-        //            }
-        //        }
-
-        //        SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSCF").Specific;
-        //        myTotalEditText.Value = total.ToString("N", sapNumberFormat);
-        //    }
-        //    else
-        //    {
-        //        for (int i = 1; i <= mOperations.RowCount; i++)
-        //        {
-        //            if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
-        //            {
-        //                SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
-        //                total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
-        //            }
-        //        }
-        //        SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSCF").Specific;
-        //        myTotalEditText.Value = total.ToString("N", sapNumberFormat);
-        //    }
-        //}
-
-        //internal static void OperationsTotalSubC(IForm uIAPIRawForm)
-        //{
-        //    System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
-        //    double total = 0;
-
-        //    SAPbouiCOM.Matrix mOperations = (SAPbouiCOM.Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
-
-        //    for (int i = 1; i <= mOperations.RowCount; i++)
-        //    {
-        //        if (((SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(i).Specific).Value.ToString().StartsWith("SUBCON"))
-        //        {
-        //            SAPbouiCOM.EditText optotalCell = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(i).Specific;
-        //            total += double.Parse(optotalCell.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, CultureInfo.InvariantCulture);
-        //        }
-        //    }
-
-        //    SAPbouiCOM.EditText myTotalEditText = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCTotalSC").Specific;
-        //    myTotalEditText.Value = total.ToString("N", sapNumberFormat);
-        //}
-
+   
         internal static (string AdditionalConditions, string ConcatenatedTextureCodes, string tClassExpression, string OpQuantityExpression) GetAdditionalConditions(List<Dictionary<string, string>> matrix1Values)
         {
             string quantity = "";
@@ -570,6 +515,7 @@ namespace STXGen2
             var TextureClassList = new List<string>();
             var OpQuantityList = new List<string>();
             string concatenatedTextureCodes = GetConcatenatedTextureCodes(matrix1Values);
+
 
             for (int i = 0; i < matrix1Values.Count; i++)
             {
@@ -605,6 +551,7 @@ namespace STXGen2
             string OpQuantityExpression = $"(CASE {OPQty} ELSE 0 END) as \"Quantity\"";
 
             return (calcFactorExpression, concatenatedTextureCodes, tClassExpression, OpQuantityExpression);
+
         }
 
         internal static void GetFiltersOperations(IForm uIAPIRawForm, EditText qCDocEntry)

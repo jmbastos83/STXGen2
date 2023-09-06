@@ -282,7 +282,6 @@ namespace STXGen2
             this.lPinfo1 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo1").Specific));
             this.lPinfo2 = ((SAPbouiCOM.StaticText)(this.GetItem("lPinfo2").Specific));
             this.mOperations = ((SAPbouiCOM.Matrix)(this.GetItem("mOper").Specific));
-            this.mOperations.ChooseFromListBefore += new SAPbouiCOM._IMatrixEvents_ChooseFromListBeforeEventHandler(this.mOperations_ChooseFromListBefore);
             this.mOperations.DoubleClickAfter += new SAPbouiCOM._IMatrixEvents_DoubleClickAfterEventHandler(this.mOperations_DoubleClickAfter);
             this.mOperations.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.mOperations_ChooseFromListAfter);
             this.mOperations.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.mOperations_GotFocusAfter);
@@ -306,9 +305,27 @@ namespace STXGen2
 
         }
 
+
+        /// <summary>
+        /// Initialize form event. Called by framework before form creation.
+        /// </summary>
+        public override void OnInitializeFormEvents()
+        {
+            this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
+            this.UnloadBefore += new SAPbouiCOM.Framework.FormBase.UnloadBeforeHandler(this.Form_UnloadBefore);
+        }
+
+
+        private void OnCustomInitialize()
+        {
+            QCEvents.FillTextureClass(this.UIAPIRawForm);
+            QCEvents.FillUnitMeasures(this.UIAPIRawForm);
+        }
+
+
         internal string AddUDO(string docEntry, string objType, string mLinenum)
         {
-            BoObjectTypes objectType =DBCalls.GetSAPObjectType(objType);
+            BoObjectTypes objectType = DBCalls.GetSAPObjectType(objType);
             SAPbobsCOM.Documents doc = (SAPbobsCOM.Documents)Utils.oCompany.GetBusinessObject(objectType);
 
             SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
@@ -329,24 +346,14 @@ namespace STXGen2
             return DocEntry;
         }
 
-
-
-        /// <summary>
-        /// Initialize form event. Called by framework before form creation.
-        /// </summary>
-        public override void OnInitializeFormEvents()
-        {
-            this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
-            this.UnloadBefore += new SAPbouiCOM.Framework.FormBase.UnloadBeforeHandler(this.Form_UnloadBefore);
-        }
-
-
-        internal void LoadFrmByKey(string qcid, string itemCode, string itemName, string docCur, string unPrice, float exRate)
+        internal void LoadFrmByKey(string qcid, string itemCode, string itemName, string docCur, string unPrice, float exRate,string DocEntry, string ObjType, string mLinenum)
         {
             try
             {
+                sapDocEntry = DocEntry;
+                sapObjType = ObjType;
+                sapDocLineNum = mLinenum;
 
-                //SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
                 this.UIAPIRawForm.Freeze(true);
                 formUpdateTrigger = false;
                 SetFormModeToFind();
@@ -387,7 +394,7 @@ namespace STXGen2
             // Enable QCDocEntry field temporarily
             QCDocEntry.Item.Enabled = true;
             QCDocEntry.Value = qcid;
-            
+
             QCEvents.BindMatrixCheckboxes(this.UIAPIRawForm, mOperations, mOperations.RowCount);
             ButtonOk.Item.Click();
 
@@ -409,7 +416,7 @@ namespace STXGen2
         {
             QCItemCode.Value = itemCode;
             QCItemName.Value = itemName;
-            
+
             ToolImg.Picture = Path.Combine(!Directory.Exists(Path.Combine(Utils.oCompany.BitMapPath, "Tools Images")) ? Utils.oCompany.BitMapPath : Path.Combine(Utils.oCompany.BitMapPath, "Tools Images"), ToolImg.Picture);
         }
 
@@ -493,15 +500,6 @@ namespace STXGen2
             mTextures.AutoResizeColumns();
             loadingForm = false;
         }
-
-    
-        private void OnCustomInitialize()
-        {
-            QCEvents.FillTextureClass(this.UIAPIRawForm);
-            QCEvents.FillUnitMeasures(this.UIAPIRawForm);
-        }
-
-
 
 
 
@@ -638,9 +636,10 @@ namespace STXGen2
                     this.LCPrice.Item.Visible = true;
                     this.LCCurr.Item.Visible = true;
 
-                    PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
+                    
                 }
             }
+            PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
         }
 
         private void QCLength_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
@@ -1611,9 +1610,14 @@ namespace STXGen2
             }
             else
             {
+                this.UIAPIRawForm.Freeze(true);
                 this.mOperations.Clear();
+                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                this.UIAPIRawForm.Freeze(false);
+
             }
 
+            PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
         }
 
 
@@ -1669,40 +1673,23 @@ namespace STXGen2
 
         private void UpdateOperationControls(int row, string resCode, string resCodeN, double subCostValue)
         {
-            //SAPbouiCOM.EditText resource = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(row).Specific;
-            //SAPbouiCOM.EditText resourceN = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResN").Cells.Item(row).Specific;
-            //SAPbouiCOM.EditText resCost = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPCost").Cells.Item(row).Specific;
+
             SAPbouiCOM.EditText resQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(row).Specific;
-            //SAPbouiCOM.EditText totalResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(row).Specific;
             SAPbouiCOM.EditText errMsg = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPErrMsg").Cells.Item(row).Specific;
 
-            //if (QCEvents.operations == null)
-            //{
-            //    mOperations.SetCellWithoutValidation(row, "OPResc", resCode);
-            //    mOperations.SetCellWithoutValidation(row, "OPResN", resCodeN);
-            //    mOperations.SetCellWithoutValidation(row, "OPCost", subCostValue.ToString(CultureInfo.InvariantCulture));
-            //}
-            //else
-            //{
-                mOperations.SetCellWithoutValidation(row, "OPResc", resCode);
-                mOperations.SetCellWithoutValidation(row, "OPResN", resCodeN);
-                mOperations.SetCellWithoutValidation(row, "OPCost", subCostValue.ToString(CultureInfo.InvariantCulture));
+            mOperations.SetCellWithoutValidation(row, "OPResc", resCode);
+            mOperations.SetCellWithoutValidation(row, "OPResN", resCodeN);
+            mOperations.SetCellWithoutValidation(row, "OPCost", subCostValue.ToString(CultureInfo.InvariantCulture));
 
-                HandleResourceCostErrors(subCostValue, errMsg, row);
-            //}
+            HandleResourceCostErrors(subCostValue, errMsg, row);
 
             double resQtyValue;
 
             if (double.TryParse(resQty.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out resQtyValue))
             {
-                //if (QCEvents.operations == null)
-                //{
-                    mOperations.SetCellWithoutValidation(row, "OPTotal", (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture));
-                //}
-                //else
-                //{
-                //    totalResc.Value = (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture);
-                //}
+
+                mOperations.SetCellWithoutValidation(row, "OPTotal", (subCostValue * resQtyValue).ToString(CultureInfo.InvariantCulture));
+
             }
 
             mOperations.FlushToDataSource();
@@ -1746,30 +1733,24 @@ namespace STXGen2
             if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPQtdT" && pVal.ActionSuccess == true)
             {
                 SAPbouiCOM.EditText opResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(pVal.Row).Specific;
-                SAPbouiCOM.EditText opTotal = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
                 SAPbouiCOM.EditText opNewQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
                 SAPbouiCOM.EditText opRescCost = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPCost").Cells.Item(pVal.Row).Specific;
-                //string selectedValue = OPFilter.Selected.Value;
-
 
                 double opNewQtyValue, opRescCostValue;
 
                 if (double.TryParse(opNewQty.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out opNewQtyValue) && double.TryParse(opRescCost.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out opRescCostValue))
                 {
-                    //opTotal.Value = (opNewQtyValue * opRescCostValue).ToString();
                     newCost = (opNewQtyValue * opRescCostValue).ToString(CultureInfo.InvariantCulture);
-                    opTotal.Value = newCost;
-
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPTotal", newCost);
                 }
-
                 else
                 {
-                    opTotal.Value = "0";
+                    newCost = "0";
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPTotal", newCost);
                 }
                 this.UIAPIRawForm.Freeze(true);
                 mOperations.FlushToDataSource();
                 mOperations.LoadFromDataSource();
-
 
                 if (recalcConfirm == false)
                 {
@@ -1804,14 +1785,9 @@ namespace STXGen2
         private StaticText StaticText19;
         private EditText EditText16;
         private bool formUpdateTrigger;
-
-        private void mOperations_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
-        {
-            BubbleEvent = true;
-            //SAPbouiCOM.EditText OPResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPResc").Cells.Item(pVal.Row).Specific;
-            //previousResc = OPResc.Value;
-
-        }
+        private string sapDocEntry;
+        private string sapObjType;
+        private string sapDocLineNum;
 
         private void mTextures_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -1862,7 +1838,7 @@ namespace STXGen2
             };
             if (formUpdateTrigger == true)
             {
-                DBCalls.UpdateSAPDocument(UnloadResults);
+                DBCalls.UpdateSAPDocument(UnloadResults,sapDocEntry,sapObjType,sapDocLineNum);
 
                 if (!string.IsNullOrEmpty(ParentFormUID))
                 {
@@ -1873,5 +1849,6 @@ namespace STXGen2
             }
             
         }
+
     }
 }
