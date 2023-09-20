@@ -503,7 +503,7 @@ namespace STXGen2
         }
 
    
-        internal static (string AdditionalConditions, string ConcatenatedTextureCodes, string tClassExpression, string OpQuantityExpression) GetAdditionalConditions(List<Dictionary<string, string>> matrix1Values)
+        internal static (string AdditionalConditions, string ConcatenatedTextureCodes, string tClassExpression, string OpQuantityExpression, string QtyFactorExpression) GetAdditionalConditions(List<Dictionary<string, string>> matrix1Values)
         {
             string quantity = "";
             string textureCode = "";
@@ -514,6 +514,7 @@ namespace STXGen2
             var calcFactorList = new List<string>();
             var TextureClassList = new List<string>();
             var OpQuantityList = new List<string>();
+            var QtycFactorList = new List<string>();
             string concatenatedTextureCodes = GetConcatenatedTextureCodes(matrix1Values);
 
 
@@ -537,12 +538,15 @@ namespace STXGen2
                 string condition3 = $"WHEN {GeoComplex} = 1 then T1.\"Quantity\" when {GeoComplex} = 2 then T1.\"U_STXQTYGC2\" when {GeoComplex} = 3 then T1.\"U_STXQTYGC3\"";
                 OpQuantityList.Add(condition3);
 
+                string condition4 = $"{quantity}";
+                QtycFactorList.Add(condition4);
+
 
 
             }
 
             string calcFactorcond = string.Join(" ", calcFactorList);
-            string calcFactorExpression = $"(CASE {calcFactorcond} ELSE {quantity} END) as \"CalcFactor\"";
+            string calcFactorExpression = $"(CASE {calcFactorcond} ELSE 1 END) as \"CalcFactor\"";
 
             string tClasscond = string.Join(" ", TextureClassList);
             string tClassExpression = $"(CASE {tClasscond} ELSE 1 END) as \"TClassFactor\"";
@@ -550,7 +554,10 @@ namespace STXGen2
             string OPQty = string.Join(" ", OpQuantityList);
             string OpQuantityExpression = $"(CASE {OPQty} ELSE 0 END) as \"Quantity\"";
 
-            return (calcFactorExpression, concatenatedTextureCodes, tClassExpression, OpQuantityExpression);
+            string QtyFactor = string.Join(" ", QtycFactorList);
+            string QtyFactorExpression = $"({QtyFactor})";
+
+            return (calcFactorExpression, concatenatedTextureCodes, tClassExpression, OpQuantityExpression, QtyFactorExpression);
 
         }
 
@@ -607,7 +614,7 @@ namespace STXGen2
         {
             SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)uIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
 
-            var (CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression) = QCEvents.GetAdditionalConditions(mtTexture);
+            var (CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, QtyFactorExpression) = QCEvents.GetAdditionalConditions(mtTexture);
 
             // Create a unique identifier for the DataTable
             string dataTableID = "Operations";
@@ -624,11 +631,11 @@ namespace STXGen2
 
             if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
             {
-                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression);
             }
             else
             {
-                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression);
             }
 
             int operationscount = operations.Rows.Count;
@@ -754,7 +761,7 @@ namespace STXGen2
                 List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
 
 
-                var (CalcFactorCond, concatenatedTextureCodes, tClassCond, OpQuantityExpression) = QCEvents.GetAdditionalConditions(matrix1Values);
+                var (CalcFactorCond, concatenatedTextureCodes, tClassCond, OpQuantityExpression, QtyFactorExpression) = QCEvents.GetAdditionalConditions(matrix1Values);
 
                 try
                 {
@@ -947,7 +954,7 @@ namespace STXGen2
 
                 if (!string.IsNullOrEmpty(opRescValue) && !opRescValue.StartsWith("SUBCON"))
                 {
-                    string optotalValue = cells.FirstOrDefault(c => c.Element("uid").Value == "U_Price")?.Element("value")?.Value;
+                    string optotalValue = cells.FirstOrDefault(c => c.Element("uid").Value == "U_LineTot")?.Element("value")?.Value;
                     totalop += HelperMethods.ParseValueToDouble(optotalValue);
 
                     string qtytotalValue = cells.FirstOrDefault(c => c.Element("uid").Value == "U_Quantity")?.Element("value")?.Value;

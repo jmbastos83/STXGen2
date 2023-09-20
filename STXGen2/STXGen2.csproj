@@ -48,8 +48,15 @@
     <Reference Include="SAPBusinessOneSDK" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="SAPObjType.cs" />
+    <Compile Include="DBStructure.cs" />
+    <Compile Include="DocumentTracker.b1f.cs">
+      <DependentUpon>DocumentTracker.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="RelationshipMap.b1f.cs">
+      <DependentUpon>RelationshipMap.b1f</DependentUpon>
+    </Compile>
     <Compile Include="ItemData.cs" />
-    <Compile Include="SAPForms.cs" />
     <Compile Include="SalesOrder.b1f.cs">
       <DependentUpon>SalesOrder.b1f</DependentUpon>
     </Compile>
@@ -60,6 +67,12 @@
     <Compile Include="TempDataTableColumns.cs" />
     <Compile Include="TempDataTableRow.cs" />
     <Compile Include="TempDataTableRows.cs" />
+    <Compile Include="WOFindSo.b1f.cs">
+      <DependentUpon>WOFindSo.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="WorkOrder.b1f.cs">
+      <DependentUpon>WorkOrder.b1f</DependentUpon>
+    </Compile>
     <Compile Include="XMLDatasource.cs" />
     <Compile Include="DBCalls.cs" />
     <Compile Include="FormTranslations.cs" />
@@ -87,6 +100,12 @@
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DocumentTracker.b1f">
+      <FormCategory>UserForm</FormCategory>
+    </None>
+    <None Include="RelationshipMap.b1f">
+      <FormCategory>UserForm</FormCategory>
+    </None>
     <None Include="QuoteCalculator.b1f">
       <FormCategory>UserForm</FormCategory>
     </None>
@@ -101,6 +120,15 @@
     </None>
     <None Include="SalesOrder.b1f__orig_srf">
       <DependentUpon>SalesOrder.b1f</DependentUpon>
+    </None>
+    <None Include="WOFindSo.b1f">
+      <FormCategory>UserForm</FormCategory>
+    </None>
+    <None Include="WorkOrder.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="WorkOrder.b1f__orig_srf">
+      <DependentUpon>WorkOrder.b1f</DependentUpon>
     </None>
   </ItemGroup>
   <ItemGroup>

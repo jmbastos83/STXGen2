@@ -169,7 +169,7 @@ namespace STXGen2
                     if (string.IsNullOrEmpty(qcid))
                     {
                         frmQCalc = new QuoteCalculator();
-                        frmQCalc.ParentFormUID = activeForm.UniqueID;
+                        Utils.ParentFormUID = activeForm.UniqueID;
 
                         string formTypeEx = activeForm.TypeEx;
                         string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
@@ -200,7 +200,7 @@ namespace STXGen2
 
                         frmQCalc = new QuoteCalculator();
 
-                        frmQCalc.ParentFormUID = activeForm.UniqueID;
+                        Utils.ParentFormUID = activeForm.UniqueID;
                         if (activeForm.Mode == BoFormMode.fm_UPDATE_MODE)
                         {
                             activeForm.Items.Item("1").Click();

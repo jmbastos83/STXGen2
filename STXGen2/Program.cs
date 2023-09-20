@@ -41,7 +41,9 @@ namespace STXGen2
                 SBO_Application.RightClickEvent += new SAPbouiCOM._IApplicationEvents_RightClickEventEventHandler(SAPEvents.SBO_Application_RightClickEvent);
 
                 Utils.oCompany = (SAPbobsCOM.Company)SBO_Application.Company.GetDICompany();
-                
+
+                Utils.InitialSetup();
+
                 Utils.CompSettings();
 
                 Utils.GetCompanyCulture();

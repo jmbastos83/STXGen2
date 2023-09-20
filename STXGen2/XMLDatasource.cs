@@ -27,78 +27,73 @@ namespace STXGen2
             public string Value { get; set; }
         }
 
-        public static DbDataSources ParseXml(XDocument xml)
-        {
-            var dbDataSourcesElement = xml.Descendants("dbDataSources").FirstOrDefault();
-            var rowsElements = dbDataSourcesElement?.Descendants("row") ?? Enumerable.Empty<XElement>();
+        //public static DbDataSources ParseXml(XDocument xml)
+        //{
+        //    var dbDataSourcesElement = xml.Descendants("dbDataSources").FirstOrDefault();
+        //    var rowsElements = dbDataSourcesElement?.Descendants("row") ?? Enumerable.Empty<XElement>();
 
-            var dbDataSources = new DbDataSources
-            {
-                Uid = dbDataSourcesElement?.Attribute("uid")?.Value,
-                Rows = rowsElements.Select(rowElement =>
-                    new Row
-                    {
-                        Cells = rowElement.Descendants("cell").Select(cellElement =>
-                            new Cell
-                            {
-                                Uid = cellElement.Element("uid")?.Value,
-                                Value = cellElement.Element("value")?.Value
-                            }
-                        ).ToList()
-                    }
-                ).ToList()
-            };
+        //    var dbDataSources = new DbDataSources
+        //    {
+        //        Uid = dbDataSourcesElement?.Attribute("uid")?.Value,
+        //        Rows = rowsElements.Select(rowElement =>
+        //            new Row
+        //            {
+        //                Cells = rowElement.Descendants("cell").Select(cellElement =>
+        //                    new Cell
+        //                    {
+        //                        Uid = cellElement.Element("uid")?.Value,
+        //                        Value = cellElement.Element("value")?.Value
+        //                    }
+        //                ).ToList()
+        //            }
+        //        ).ToList()
+        //    };
 
-            return dbDataSources;
-        }
+        //    return dbDataSources;
+        //}
 
-        public static DbDataSources GetDbDataSourcesFromOperation(SAPbouiCOM.DataTable operations, Dictionary<string, string> columnToUidMappings)
-        {
-            var dbDataSources = new DbDataSources
-            {
-                Uid = "@STXQC19O",
-                Rows = new List<Row>()
-            };
+        //public static DbDataSources GetDbDataSourcesFromOperation(SAPbouiCOM.DataTable operations, Dictionary<string, string> columnToUidMappings)
+        //{
+        //    var dbDataSources = new DbDataSources
+        //    {
+        //        Uid = "@STXQC19O",
+        //        Rows = new List<Row>()
+        //    };
 
-            // loop over the rows of the DataTable
-            Parallel.For(0, operations.Rows.Count, rowIndex =>
-            {
-                var row = new Row
-                {
-                    Cells = new List<Cell>()
-                };
+        //    // loop over the rows of the DataTable
+        //    Parallel.For(0, operations.Rows.Count, rowIndex =>
+        //    {
+        //        var row = new Row
+        //        {
+        //            Cells = new List<Cell>()
+        //        };
 
-                // loop over the columns of the DataTable
-                for (int columnIndex = 0; columnIndex < operations.Columns.Count; columnIndex++)
-                {
-                    var columnName = operations.Columns.Item(columnIndex).Name;
+        //        // loop over the columns of the DataTable
+        //        for (int columnIndex = 0; columnIndex < operations.Columns.Count; columnIndex++)
+        //        {
+        //            var columnName = operations.Columns.Item(columnIndex).Name;
 
-                    // use the column name to get the corresponding Uid from the dictionary
-                    if (columnToUidMappings.TryGetValue(columnName, out var uid))
-                    {
-                        var cell = new Cell
-                        {
-                            Uid = uid,
-                            Value = operations.GetValue(columnIndex, rowIndex).ToString()
-                        };
+        //            // use the column name to get the corresponding Uid from the dictionary
+        //            if (columnToUidMappings.TryGetValue(columnName, out var uid))
+        //            {
+        //                var cell = new Cell
+        //                {
+        //                    Uid = uid,
+        //                    Value = operations.GetValue(columnIndex, rowIndex).ToString()
+        //                };
 
-                        row.Cells.Add(cell);
-                    }
-                }
+        //                row.Cells.Add(cell);
+        //            }
+        //        }
 
-                lock (dbDataSources.Rows)
-                {
-                    dbDataSources.Rows.Add(row);
-                }
-            });
+        //        lock (dbDataSources.Rows)
+        //        {
+        //            dbDataSources.Rows.Add(row);
+        //        }
+        //    });
 
-            return dbDataSources;
-        }
-
-
-
-
-
+        //    return dbDataSources;
+        //}
 
 
         public static string GenerateXml(TempDataTable operationsDataTable)

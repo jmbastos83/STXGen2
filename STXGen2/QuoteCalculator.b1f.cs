@@ -156,7 +156,7 @@ namespace STXGen2
         private bool lostFocusQCWidth = false;
         private bool lostFocusQCHeight = false;
 
-        public string ParentFormUID { get; set; }
+        
 
         public QuoteCalculator()
         {
@@ -1629,37 +1629,67 @@ namespace STXGen2
 
         private void mOperations_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
         {
-
-            if (pVal.ItemUID != "mOper" || pVal.ColUID != "OPResc" || !pVal.ActionSuccess)
-                return;
-
-            SAPbouiCOM.EditText resQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
-            SAPbouiCOM.EditText totalResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
-
-            var selectedData = GetSelectedDataFromChooseFromList(pVal);
-            if (selectedData == null)
-                return;
-
-            string resCode = selectedData.Item1;
-            string resCodeN = selectedData.Item2;
-
-            string subCost = DBCalls.ResCost(resCode);
-            double subCostValue;
-
-            if (!double.TryParse(subCost, NumberStyles.Any, CultureInfo.InvariantCulture, out subCostValue))
-                return;
-
-            this.UIAPIRawForm.Freeze(true);
-
-            UpdateOperationControls(pVal.Row, resCode, resCodeN, subCostValue);
-
-            if (!recalcConfirm)
+            try
             {
-                RecalculateLineData(pVal.Row, resCode, resQty, resQty.Value, totalResc.Value);
-                recalcConfirm = true;
-            }
+                if (pVal.ItemUID != "mOper" && (pVal.ColUID != "OPResc" || pVal.ColUID != "OPcode" || !pVal.ActionSuccess))
+                    return;
 
-            this.UIAPIRawForm.Freeze(false);
+                if (pVal.ColUID == "OPResc" && pVal.ActionSuccess)
+                {
+                    SAPbouiCOM.EditText resQty = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPQtdT").Cells.Item(pVal.Row).Specific;
+                    SAPbouiCOM.EditText totalResc = (SAPbouiCOM.EditText)mOperations.Columns.Item("OPTotal").Cells.Item(pVal.Row).Specific;
+
+                    var selectedData = GetSelectedResourceFromChooseFromList(pVal);
+                    if (selectedData == null)
+                        return;
+
+                    string resCode = selectedData.Item1;
+                    string resCodeN = selectedData.Item2;
+
+                    string subCost = DBCalls.ResCost(resCode);
+                    double subCostValue;
+
+                    if (!double.TryParse(subCost, NumberStyles.Any, CultureInfo.InvariantCulture, out subCostValue))
+                        return;
+
+                    this.UIAPIRawForm.Freeze(true);
+
+                    UpdateOperationControls(pVal.Row, resCode, resCodeN, subCostValue);
+
+                    if (!recalcConfirm)
+                    {
+                        RecalculateLineData(pVal.Row, resCode, resQty, resQty.Value, totalResc.Value);
+                        recalcConfirm = true;
+                    }
+                }
+                if (pVal.ColUID == "OPcode" && pVal.ActionSuccess)
+                {
+                    var selectedData = GetSelectedOperationFromChooseFromList(pVal);
+                    if (selectedData == null)
+                        return;
+
+                    string operCode = selectedData.Item1;
+                    string oprName = selectedData.Item2;
+                    string oprLocalName = selectedData.Item3;
+
+
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPcode", operCode);
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPName", oprName);
+                    mOperations.SetCellWithoutValidation(pVal.Row, "OPNameL", oprLocalName);
+
+                    mOperations.FlushToDataSource();
+                    mOperations.LoadFromDataSource();
+                }
+            }
+            catch (Exception ex)
+            {
+                Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Short, true);
+            }
+            finally
+            {
+                this.UIAPIRawForm.Freeze(false);
+            }
+            
         }
 
         private void RecalculateLineData(int row, string resCode, SAPbouiCOM.EditText resQty, string resQtyValue, string totalRescValue)
@@ -1713,7 +1743,7 @@ namespace STXGen2
             }
         }
 
-        private Tuple<string, string> GetSelectedDataFromChooseFromList(SBOItemEventArg pVal)
+        private Tuple<string, string> GetSelectedResourceFromChooseFromList(SBOItemEventArg pVal)
         {
             SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
             SAPbouiCOM.ChooseFromList chooseFromList = this.UIAPIRawForm.ChooseFromLists.Item(chooseFromListEventArg.ChooseFromListUID);
@@ -1724,6 +1754,22 @@ namespace STXGen2
                 string resCode = selectedDataTable.GetValue("VisResCode", 0).ToString();
                 string resCodeN = selectedDataTable.GetValue("ResName", 0).ToString();
                 return new Tuple<string, string>(resCode, resCodeN);
+            }
+            return null;
+        }
+
+        private Tuple<string, string, string> GetSelectedOperationFromChooseFromList(SBOItemEventArg pVal)
+        {
+            SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+            SAPbouiCOM.ChooseFromList chooseFromList = this.UIAPIRawForm.ChooseFromLists.Item(chooseFromListEventArg.ChooseFromListUID);
+
+            SAPbouiCOM.DataTable selectedDataTable = chooseFromListEventArg.SelectedObjects;
+            if (selectedDataTable != null && selectedDataTable.Rows.Count > 0)
+            {
+                string operCode = selectedDataTable.GetValue("Code", 0).ToString();
+                string operName = selectedDataTable.GetValue("U_STXOPDes", 0).ToString();
+                string operLocalName = selectedDataTable.GetValue("U_STXOPDesLocal", 0).ToString();
+                return new Tuple<string, string, string>(operCode, operName, operLocalName);
             }
             return null;
         }
@@ -1840,9 +1886,9 @@ namespace STXGen2
             {
                 DBCalls.UpdateSAPDocument(UnloadResults,sapDocEntry,sapObjType,sapDocLineNum);
 
-                if (!string.IsNullOrEmpty(ParentFormUID))
+                if (!string.IsNullOrEmpty(Utils.ParentFormUID))
                 {
-                    SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(ParentFormUID);
+                    SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(Utils.ParentFormUID);
                     parentForm.Select();
                     Program.SBO_Application.ActivateMenuItem("1304");
                 }

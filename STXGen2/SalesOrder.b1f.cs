@@ -37,15 +37,17 @@ namespace STXGen2
         private bool isChooseFromListPickerTriggered;
         private bool isChooseFromListTriggered;
         private bool isUpdatingDimensions;
-        private string prevToolNum;
-        private string prevPartNum;
-        private string prevPartName;
-        private string prevLeadTime;
+        private string prevToolNum = string.Empty;
+        private string prevPartNum = string.Empty;
+        private string prevPartName = string.Empty;
+        private string prevLeadTime = string.Empty;
         private string newItmCode;
         private string ItemCC1;
         private string ItemCC2;
         private double resCC1;
         private double resCC2;
+
+        private DocumentTracker formDocTracker;
 
         public string prevItemCode { get; private set; }
         public string STXQCID { get; private set; }
@@ -80,7 +82,11 @@ namespace STXGen2
             this.Matrix0 = ((SAPbouiCOM.Matrix)(this.GetItem("38").Specific));
             this.Matrix0.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.Matrix0_GotFocusAfter);
             this.Matrix0.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.Matrix0_ChooseFromListAfter);
-            
+            this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Revision").Specific));
+            this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("Item_1").Specific));
+            this.Button1.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button1_PressedAfter);
+            this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("Item_0").Specific));
+            this.Button2.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button2_PressedAfter);
             this.OnCustomInitialize();
 
         }
@@ -411,6 +417,65 @@ namespace STXGen2
             if (pVal.ActionSuccess == true)
             {
                 SystemForm1.SOcopyToTrigger = false;
+            }
+        }
+
+        private EditText EditText0;
+        private Button Button1;
+        
+
+        private void Button1_PressedAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.DBDataSource dbDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item(0);
+            Utils.ParentFormUID = this.UIAPIRawForm.UniqueID;
+            string docEntry = dbDataSource.GetValue("DocEntry", 0).Trim();
+
+            if (!IsFormOpen("DocTracker"))
+            {
+                DocumentTracker.openDocEntry = docEntry;
+                formDocTracker = new DocumentTracker();
+                
+                formDocTracker.UIAPIRawForm.Visible = true;
+            }
+            else
+            {
+               SAPbouiCOM.Form existingForm = Program.SBO_Application.Forms.Item("DocTracker");
+               existingForm.Visible = true;
+            }
+        }
+
+        private bool IsFormOpen(string formUID)
+        {
+            for (int i = 0; i < Program.SBO_Application.Forms.Count; i++)
+            {
+                if (Program.SBO_Application.Forms.Item(i).UniqueID == formUID)
+                {
+                    return true; 
+                }
+            }
+            return false;
+        }
+
+        private Button Button2;
+        private RelationshipMap formRelationshipMap;
+
+        private void Button2_PressedAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.DBDataSource dbDataSource = (SAPbouiCOM.DBDataSource)this.UIAPIRawForm.DataSources.DBDataSources.Item(0);
+            Utils.ParentFormUID = this.UIAPIRawForm.UniqueID;
+            string docEntry = dbDataSource.GetValue("DocEntry", 0).Trim();
+
+            if (!IsFormOpen("RelationMap"))
+            {
+                //RelationshipMap.openDocEntry = docEntry;
+                formRelationshipMap = new RelationshipMap();
+
+                formRelationshipMap.UIAPIRawForm.Visible = true;
+            }
+            else
+            {
+                SAPbouiCOM.Form existingForm = Program.SBO_Application.Forms.Item("RelationMap");
+                existingForm.Visible = true;
             }
 
         }

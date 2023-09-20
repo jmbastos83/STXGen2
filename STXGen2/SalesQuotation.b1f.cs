@@ -62,6 +62,7 @@ namespace STXGen2
 
         private Matrix Matrix0;
         private ButtonCombo ButtonCombo0;
+        private ComboBox ComboBox0;
 
         public string prevItemCode { get; private set; }
         public string STXQCID { get; private set; }
@@ -78,8 +79,41 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeComponent()
         {
-            this.ComboBox1 = ((SAPbouiCOM.ComboBox)(this.GetItem("10000329").Specific));
-            this.ComboBox1.ComboSelectBefore += new SAPbouiCOM._IComboBoxEvents_ComboSelectBeforeEventHandler(this.ComboBox1_ComboSelectBefore);
+            this.stxMKSeg1 = ((SAPbouiCOM.EditText)(this.GetItem("MKSeg1").Specific));
+            this.stxMKSeg1.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSeg1_ChooseFromListAfter);
+            this.stxMKSEG2 = ((SAPbouiCOM.EditText)(this.GetItem("MKSEG2").Specific));
+            this.stxMKSEG2.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSEG2_ChooseFromListAfter);
+            this.stxMKSEG2.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxMKSEG2_ChooseFromListBefore);
+            this.stxBrand = ((SAPbouiCOM.EditText)(this.GetItem("STXBrand").Specific));
+            this.stxBrand.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxBrand_ChooseFromListAfter);
+            this.stxBrand.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxBrand_ChooseFromListBefore);
+            this.stxNBOID = ((SAPbouiCOM.EditText)(this.GetItem("NBOID").Specific));
+            this.stxNBOID.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxNBOID_ChooseFromListAfter);
+            this.stxNBOID.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxNBOID_ChooseFromListBefore);
+            this.stxOEMPgm = ((SAPbouiCOM.EditText)(this.GetItem("OEMPgm").Specific));
+            this.stxOEM = ((SAPbouiCOM.EditText)(this.GetItem("OEM").Specific));
+            this.stxGKAM = ((SAPbouiCOM.EditText)(this.GetItem("GKAM").Specific));
+            this.Matrix0 = ((SAPbouiCOM.Matrix)(this.GetItem("38").Specific));
+            this.Matrix0.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.Matrix0_GotFocusAfter);
+            this.Matrix0.ChooseFromListBefore += new SAPbouiCOM._IMatrixEvents_ChooseFromListBeforeEventHandler(this.Matrix0_ChooseFromListBefore);
+            this.Matrix0.PickerClickedBefore += new SAPbouiCOM._IMatrixEvents_PickerClickedBeforeEventHandler(this.Matrix0_PickerClickedBefore);
+            this.Matrix0.KeyDownBefore += new SAPbouiCOM._IMatrixEvents_KeyDownBeforeEventHandler(this.Matrix0_KeyDownBefore);
+            this.Matrix0.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.Matrix0_ChooseFromListAfter);
+            this.StaticText0 = ((SAPbouiCOM.StaticText)(this.GetItem("lMKSeg1").Specific));
+            this.StaticText1 = ((SAPbouiCOM.StaticText)(this.GetItem("lMKSEG2").Specific));
+            this.StaticText2 = ((SAPbouiCOM.StaticText)(this.GetItem("lSTXBrand").Specific));
+            this.StaticText3 = ((SAPbouiCOM.StaticText)(this.GetItem("lNBOID").Specific));
+            this.StaticText4 = ((SAPbouiCOM.StaticText)(this.GetItem("lOEMPgm").Specific));
+            this.StaticText5 = ((SAPbouiCOM.StaticText)(this.GetItem("lOEM").Specific));
+            this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("lGKAM").Specific));
+            this.Button0 = ((SAPbouiCOM.Button)(this.GetItem("ClrNBO").Specific));
+            this.Button0.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button0_PressedAfter);
+            this.stxMK1ID = ((SAPbouiCOM.EditText)(this.GetItem("MK1ID").Specific));
+            this.stxMK2ID = ((SAPbouiCOM.EditText)(this.GetItem("MK2ID").Specific));
+            this.stxBrandID = ((SAPbouiCOM.EditText)(this.GetItem("BrandID").Specific));
+            this.stxRevision = ((SAPbouiCOM.EditText)(this.GetItem("Revision").Specific));
+            this.ComboBox0 = ((SAPbouiCOM.ComboBox)(this.GetItem("10000329").Specific));
+            this.ComboBox0.ComboSelectBefore += new SAPbouiCOM._IComboBoxEvents_ComboSelectBeforeEventHandler(this.ComboBox0_ComboSelectBefore);
             this.OnCustomInitialize();
 
         }
@@ -685,18 +719,18 @@ namespace STXGen2
 
         }
 
-        private ComboBox ComboBox1;
 
-        private void ComboBox1_ComboSelectBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+
+        private void ComboBox0_ComboSelectBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
-            if (ComboBox1 != null)
+            if (ComboBox0 != null)
             {
                 // To get the currently selected value before the change
-                string currentValue = ComboBox1.Value;
+                string currentValue = ComboBox0.Value;
 
                 // To get the newly selected value 
-                string newValue = ComboBox1.ValidValues.Item(pVal.PopUpIndicator).Value;
+                string newValue = ComboBox0.ValidValues.Item(pVal.PopUpIndicator).Value;
 
                 if (currentValue == "Copy To" && newValue == "Sales Order")
                 {

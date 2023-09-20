@@ -10,6 +10,7 @@ namespace STXGen2
     {
         public static SAPbobsCOM.Company oCompany;
 
+        public static string ParentFormUID { get; set; }
         public static string decSep { get; private set; }
         public static string thousSep { get; private set; }
         public static int MeasureDec { get; private set; }
@@ -37,6 +38,12 @@ namespace STXGen2
                 SystemCurrency = (string)rs.Fields.Item("SysCurrncy").Value;
                 DirectRate = (string)rs.Fields.Item("DirectRate").Value;
             }
+        }
+
+        internal static void InitialSetup()
+        {
+            DBStructure.VerifyTables();
+            DBStructure.VerifyUDF();
         }
 
         public static System.Globalization.NumberFormatInfo GetSAPNumberFormatInfo()
