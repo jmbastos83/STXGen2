@@ -122,7 +122,7 @@ namespace STXGen2
                     {
                         string objtType = oGrid.DataTable.GetValue("ObjType", rowIndex).ToString();  // The value in the "ObjType" column of the clicked row
 
-                        SAPbouiCOM.EditTextColumn docNumColumn = (SAPbouiCOM.EditTextColumn)oGrid.Columns.Item("DocNum");
+                        SAPbouiCOM.EditTextColumn docNumColumn = (SAPbouiCOM.EditTextColumn)oGrid.Columns.Item("Doc. Number");
                         docNumColumn.LinkedObjectType = objtType;  // Change LinkedObjectType based on the value in the "ObjType" column
 
                     }
@@ -144,9 +144,32 @@ namespace STXGen2
             }
 
             Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
+
+            if (activeForm.TypeEx == "139" && (activeForm.Mode == BoFormMode.fm_FIND_MODE || activeForm.Mode == BoFormMode.fm_ADD_MODE))
+            {
+
+// APPLY THE IF EXIST ON THE BUTTONS
+
+                activeForm.Freeze(true);
+                SAPbouiCOM.Button relMap = activeForm.Items.Item("RelMap") as SAPbouiCOM.Button;
+                if (relMap != null)
+                {
+                    relMap.Item.Enabled = false;
+                }
+
+                SAPbouiCOM.Button docTrack = activeForm.Items.Item("DocTrak") as SAPbouiCOM.Button;
+                if (docTrack != null)
+                {
+                    docTrack.Item.Enabled = false;
+                }
+                
+                activeForm.Freeze(false);
+            }
+
             if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc")
             {
                 Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific;
+                
 
                 if (selectedRow > -1)
                 {

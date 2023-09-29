@@ -29,8 +29,6 @@ namespace STXGen2
         public static string oldLengthValue { get; set; } = "";
         public static string oldWidthValue { get; set; } = "";
 
-
-        //public static object mtxMaxLineID { get; set; } = "";
         public static string previousUOM { get; set; } = "";
         public static string currentPrice { get; private set; } = "";
         public static double DocExRate { get; private set; } = 0;
@@ -116,10 +114,10 @@ namespace STXGen2
 
         private SAPbouiCOM.CheckBox DefBOM;
         private SAPbouiCOM.ComboBox OPFilter;
-        private EditText EditText3;
-        private LinkedButton LinkedButton0;
-        private StaticText StaticText9;
-        private EditText EditText4;
+        //private EditText EditText3;
+        //private LinkedButton LinkedButton0;
+        //private StaticText StaticText9;
+        //private EditText EditText4;
 
         private StaticText StaticText5;
         private StaticText StaticText6;
@@ -155,8 +153,17 @@ namespace STXGen2
         private bool lostFocusQCLength = false;
         private bool lostFocusQCWidth = false;
         private bool lostFocusQCHeight = false;
+        private LinkedButton LinkedButton2;
+        private StaticText StaticText19;
+        private EditText EditText16;
+        private bool formUpdateTrigger;
+        private string sapDocEntry;
+        private string sapObjType;
+        private string sapDocLineNum;
 
-        
+        private EditText EditText1;
+        private SAPbouiCOM.Button reCalc;
+
 
         public QuoteCalculator()
         {
@@ -262,6 +269,7 @@ namespace STXGen2
             this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_6").Specific));
             this.StaticText8 = ((SAPbouiCOM.StaticText)(this.GetItem("lUnPrice").Specific));
             this.lLCPrice = ((SAPbouiCOM.StaticText)(this.GetItem("lLCPrice").Specific));
+            this.lLCPrice.Item.Visible = false;
             this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("QCObs").Specific));
             this.StaticText10 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_23").Specific));
             this.StaticText11 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_24").Specific));
@@ -298,11 +306,12 @@ namespace STXGen2
             this.DefBOM.PressedAfter += new SAPbouiCOM._ICheckBoxEvents_PressedAfterEventHandler(this.DefBOM_PressedAfter);
             this.OPFilter = ((SAPbouiCOM.ComboBox)(this.GetItem("OPFilter").Specific));
             this.OPFilter.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.OPFilter_ComboSelectAfter);
-            this.EditText15 = ((SAPbouiCOM.EditText)(this.GetItem("QCWOrder").Specific));
             this.LinkedButton2 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_21").Specific));
             this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
             this.EditText16 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
             this.BaseLine = ((SAPbouiCOM.EditText)(this.GetItem("BaseLine").Specific));
+            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("QCWOrder").Specific));
+            this.reCalc = ((SAPbouiCOM.Button)(this.GetItem("Recalc").Specific));
             this.OnCustomInitialize();
 
         }
@@ -366,6 +375,8 @@ namespace STXGen2
                 BindFieldsAndCalculateArea(docCur, unPrice);
                 AddRowIfMatrixEmpty();
                 MatrixSorting();
+                DisableFormWO();
+                
                 this.Show();
             }
             catch (Exception)
@@ -377,6 +388,21 @@ namespace STXGen2
             {
                 SetFinalFormProperties();
                 this.UIAPIRawForm.Freeze(false);
+            }
+        }
+
+        private void DisableFormWO()
+        {
+            if (!string.IsNullOrEmpty(EditText1.Value))
+            {
+                this.mTextures.Item.Enabled = false;
+                this.mOperations.Item.Enabled = false;
+                this.QCPartType.Item.Enabled = false;
+                this.QCSubPart.Item.Enabled = false;
+                this.BtnGetOPC.Item.Enabled = false;
+                this.DefBOM.Item.Enabled = false;
+                this.Button0.Item.Enabled = false;
+                this.reCalc.Item.Enabled = false;
             }
         }
 
@@ -1502,11 +1528,10 @@ namespace STXGen2
 
         private void OPFilter_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
         {
+            this.UIAPIRawForm.Freeze(true);
             try
             {
-                this.UIAPIRawForm.Freeze(true);
                 // Get the selected value from the ComboBox
-
                 string selectedValue = OPFilter.Selected.Value;
 
                 string dataSourceId = mOperations.Columns.Item("OPSeq").DataBind.Alias.ToString();
@@ -1520,6 +1545,7 @@ namespace STXGen2
             }
             finally
             {
+                DisableFormWO();
                 this.UIAPIRawForm.Freeze(false);
             }
 
@@ -1806,14 +1832,7 @@ namespace STXGen2
         }
 
 
-        private EditText EditText15;
-        private LinkedButton LinkedButton2;
-        private StaticText StaticText19;
-        private EditText EditText16;
-        private bool formUpdateTrigger;
-        private string sapDocEntry;
-        private string sapObjType;
-        private string sapDocLineNum;
+
 
         private void mTextures_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -1912,5 +1931,7 @@ namespace STXGen2
             }
 
         }
+
+
     }
 }

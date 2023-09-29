@@ -10,6 +10,9 @@ namespace STXGen2
     [FormAttribute("139", "SalesOrder.b1f")]
     class SystemForm3 : SystemFormBase
     {
+        private SAPbouiCOM.Conditions oCons;
+        private SAPbouiCOM.Condition oCon;
+
         private SAPbouiCOM.EditText stxMKSeg1;
         private SAPbouiCOM.EditText stxMKSEG2;
         private SAPbouiCOM.EditText stxBrand;
@@ -62,9 +65,16 @@ namespace STXGen2
         public override void OnInitializeComponent()
         {
             this.stxMKSeg1 = ((SAPbouiCOM.EditText)(this.GetItem("MKSeg1").Specific));
+            this.stxMKSeg1.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSeg1_ChooseFromListAfter);
             this.stxMKSEG2 = ((SAPbouiCOM.EditText)(this.GetItem("MKSEG2").Specific));
+            this.stxMKSEG2.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxMKSEG2_ChooseFromListBefore);
+            this.stxMKSEG2.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxMKSEG2_ChooseFromListAfter);
             this.stxBrand = ((SAPbouiCOM.EditText)(this.GetItem("STXBrand").Specific));
+            this.stxBrand.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxBrand_ChooseFromListBefore);
+            this.stxBrand.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxBrand_ChooseFromListAfter);
             this.stxNBOID = ((SAPbouiCOM.EditText)(this.GetItem("NBOID").Specific));
+            this.stxNBOID.ChooseFromListBefore += new SAPbouiCOM._IEditTextEvents_ChooseFromListBeforeEventHandler(this.stxNBOID_ChooseFromListBefore);
+            this.stxNBOID.ChooseFromListAfter += new SAPbouiCOM._IEditTextEvents_ChooseFromListAfterEventHandler(this.stxNBOID_ChooseFromListAfter);
             this.stxOEMPgm = ((SAPbouiCOM.EditText)(this.GetItem("OEMPgm").Specific));
             this.stxOEM = ((SAPbouiCOM.EditText)(this.GetItem("OEM").Specific));
             this.stxGKAM = ((SAPbouiCOM.EditText)(this.GetItem("GKAM").Specific));
@@ -87,6 +97,7 @@ namespace STXGen2
             this.Button1.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button1_PressedAfter);
             this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("RelMap").Specific));
             this.Button2.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button2_PressedAfter);
+            this.EditText1 = ((SAPbouiCOM.EditText)(this.GetItem("BrandID").Specific));
             this.OnCustomInitialize();
 
         }
@@ -96,7 +107,8 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeFormEvents()
         {
-            this.LoadBefore += new LoadBeforeHandler(this.Form_LoadBefore);
+            this.LoadAfter += new SAPbouiCOM.Framework.FormBase.LoadAfterHandler(this.Form_LoadAfter);
+            this.ResizeAfter += new ResizeAfterHandler(this.Form_ResizeAfter);
 
         }
 
@@ -481,14 +493,218 @@ namespace STXGen2
 
         }
 
-        private void Form_LoadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
+        private void stxMKSeg1_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.DataTable selectedDataTable = null;
+            SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+            selectedDataTable = chooseFromListEventArg.SelectedObjects;
+
+            SAPbouiCOM.EditText mk1segID = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("MK1ID").Specific;
+            mk1segID.Value = selectedDataTable.GetValue("Code", 0).ToString();
+
+        }
+
+        private void stxMKSEG2_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.DataTable selectedDataTable = null;
+            SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+            selectedDataTable = chooseFromListEventArg.SelectedObjects;
+
+            SAPbouiCOM.EditText mk2segID = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("MK2ID").Specific;
+            mk2segID.Value = selectedDataTable.GetValue("Code", 0).ToString();
+
+        }
+
+        private void stxMKSEG2_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
-            if (pVal.FormMode == 0 || pVal.FormMode == 3)
+            try
             {
+                SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("CFLMKSEG2");
+                oCons = GetCFLConditions(oCfl);
 
+                oCon = oCons.Add();
+                oCon.Alias = "U_MKSeg1Name";
+                oCon.Operation = SAPbouiCOM.BoConditionOperation.co_EQUAL;
+                oCon.CondVal = stxMKSeg1.Value.ToString();
+
+                oCfl.SetConditions(oCons);
             }
-            throw new System.NotImplementedException();
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        private Conditions GetCFLConditions(ChooseFromList oCfl)
+        {
+            oCfl.SetConditions(null);
+            return oCfl.GetConditions();
+        }
+
+        private void stxBrand_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.DataTable selectedDataTable = null;
+            SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+            selectedDataTable = chooseFromListEventArg.SelectedObjects;
+
+            SAPbouiCOM.EditText brandID = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("BrandID").Specific;
+            brandID.Value = selectedDataTable.GetValue("Code", 0).ToString();
+
+        }
+
+        private void stxBrand_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            try
+            {
+                SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("CFLBRANDS");
+                oCons = GetCFLConditions(oCfl);
+
+                oCon = oCons.Add();
+                oCon.Alias = "U_MKSeg1Name";
+                oCon.Operation = SAPbouiCOM.BoConditionOperation.co_EQUAL;
+                oCon.CondVal = stxMKSeg1.Value.ToString();
+                oCon.Relationship = SAPbouiCOM.BoConditionRelationship.cr_OR;
+
+                oCon = oCons.Add();
+                oCon.Alias = "Code";
+                oCon.Operation = SAPbouiCOM.BoConditionOperation.co_NOT_EQUAL;
+                oCon.CondVal = "-1";
+
+                oCfl.SetConditions(oCons);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        private void stxNBOID_ChooseFromListAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            try
+            {
+                if (pVal.ItemUID == "NBOID" && pVal.ActionSuccess == true)
+                {
+                    SAPbouiCOM.DataTable selectedDataTable = null;
+
+                    SBOChooseFromListEventArg chooseFromListEventArg = (SBOChooseFromListEventArg)pVal;
+                    selectedDataTable = chooseFromListEventArg.SelectedObjects;
+
+                    if (selectedDataTable != null)
+                    {
+                        this.UIAPIRawForm.Freeze(true);
+
+                        var result = DBCalls.GetDataByNBO(selectedDataTable.GetValue("Code", 0).ToString());
+                        ItemData.DisableNBOinfo(this.UIAPIRawForm);
+                        SAPbouiCOM.EditText eMkseg1 = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("MKSeg1").Specific;
+                        SAPbouiCOM.EditText eMk1ID = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("MK1ID").Specific;
+                        SAPbouiCOM.EditText eBrand = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("STXBrand").Specific;
+                        SAPbouiCOM.EditText eBrandID = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("BrandID").Specific;
+                        SAPbouiCOM.EditText eOEMPgm = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("OEMPgm").Specific;
+                        SAPbouiCOM.EditText eOEM = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("OEM").Specific;
+                        SAPbouiCOM.EditText eGKam = (SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("GKAM").Specific;
+                        (string sMkSeg1Name, string sMkseg1ID, string sBrandName, string sBrandID, string sOEM, string sOEMProgram, string sGKAM) = result.Value;
+
+                        if ((sOEMProgram.StartsWith("PH-") || sOEMProgram.StartsWith("PH_")) && eMkseg1.Value.ToString() != "")
+                        {
+                            eOEMPgm.Value = sOEMProgram;
+                            eOEM.Value = sOEM;
+                            eGKam.Value = sGKAM;
+                        }
+                        else
+                        {
+                            eMkseg1.Value = sMkSeg1Name;
+                            eMk1ID.Value = sMkseg1ID;
+                            eBrand.Value = sBrandName;
+                            eBrandID.Value = sBrandID;
+                            eOEMPgm.Value = sOEMProgram;
+                            eOEM.Value = sOEM;
+                            eGKam.Value = sGKAM;
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+            finally
+            {
+                ItemData.EnableNBOinfo(this.UIAPIRawForm);
+                this.UIAPIRawForm.Freeze(false);
+            }
+
+        }
+
+        private void stxNBOID_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            try
+            {
+                SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("CFLNBO");
+                oCons = GetCFLConditions(oCfl);
+                //oCfl.SetConditions(null);
+                //oCons = oCfl.GetConditions();
+
+                if (string.IsNullOrEmpty(stxNBOID.Value.ToString()) && (!string.IsNullOrEmpty(stxBrand.Value.ToString())))
+                {
+                    SetNBOIDCFLConditions(stxBrand.Value.ToString());
+                }
+
+                oCfl.SetConditions(oCons);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.Forms.MessageBox.Show(ex.Message);
+            }
+
+        }
+
+        private void SetNBOIDCFLConditions(string v)
+        {
+            oCon = oCons.Add();
+            oCon.BracketOpenNum = 2;
+            oCon.Alias = "U_BrandName";
+            oCon.Operation = SAPbouiCOM.BoConditionOperation.co_EQUAL;
+            oCon.CondVal = stxBrand.Value.ToString();
+            oCon.BracketCloseNum = 1;
+            oCon.Relationship = SAPbouiCOM.BoConditionRelationship.cr_OR;
+
+            oCon = oCons.Add();
+            oCon.BracketOpenNum = 1;
+            oCon.Alias = "U_NickName";
+            oCon.Operation = SAPbouiCOM.BoConditionOperation.co_START;
+            oCon.CondVal = "PH-";
+            oCon.BracketCloseNum = 1;
+            oCon.Relationship = SAPbouiCOM.BoConditionRelationship.cr_OR;
+
+            oCon = oCons.Add();
+            oCon.BracketOpenNum = 1;
+            oCon.Alias = "U_NickName";
+            oCon.Operation = SAPbouiCOM.BoConditionOperation.co_START;
+            oCon.CondVal = "PH_";
+            oCon.BracketCloseNum = 2;
+        }
+
+        private EditText EditText1;
+
+        private void Form_LoadAfter(SBOItemEventArg pVal)
+        {
+            ItemData.QCIDColumnsDisable(this.UIAPIRawForm);
+            //if (pVal.FormMode == 3)
+            //{
+            //    stxRevision.Value = "A";
+            //}
+
+        }
+
+        private void Form_ResizeAfter(SBOItemEventArg pVal)
+        {
+            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("38").Specific;
+            oMatrix.AutoResizeColumns();
 
         }
     }

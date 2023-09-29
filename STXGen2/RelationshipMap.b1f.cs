@@ -11,6 +11,9 @@ namespace STXGen2
     class RelationshipMap : UserFormBase
     {
         private SAPbouiCOM.Grid Grid0;
+        private Button Button0;
+        private Button Button1;
+
         public static string relDocEntry { get; set; }
 
 
@@ -52,7 +55,8 @@ namespace STXGen2
             SAPbobsCOM.Recordset oRecordSet = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
 
             string query = $"With SOInfo as(\n" +
-                            "Select 2 as \"FlowOrder\",'Sales Order' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
+
+                            "Select 20 as \"FlowOrder\",'Sales Order' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
                             "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T1.\"DocEntry\",T0.\"ObjType\",T1.\"LineNum\",T1.\"BaseEntry\",T1.\"BaseLine\", T1.\"BaseType\"\n" +
                             "from ORDR T0\n" +
                             "inner join RDR1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
@@ -71,7 +75,7 @@ namespace STXGen2
 
                             "DELIVERYInfo as (\n" +
 
-                            "Select 3 as \"FlowOrder\",'Delivery Note' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
+                            "Select 30 as \"FlowOrder\",'Delivery Note' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
                             "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\"\n" +
                             "from ODLN T0\n" +
                             "inner join DLN1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
@@ -79,9 +83,20 @@ namespace STXGen2
                             "inner join SOInfo T3 on T1.\"BaseEntry\" = T3.\"DocEntry\" and T1.\"BaseLine\" = T3.\"LineNum\" and T1.\"BaseType\" = T3.\"ObjType\"\n" +
                             "where T3.\"DocEntry\" = {0}),\n" +
 
+                            "WOInfo as (\n" +
+
+                            "select 25 as \"FlowOrder\",'Production Order' as \"DocType\",T3.U_ToolNum,T3.\"U_PartNum\",T2.\"CardCode\",T2.\"U_STXCustName\" AS \"CardName\",T2.\"ItemCode\", T2.\"DocNum\",\n" +
+                            "T2.\"PostDate\" AS \"DocDate\", T2.\"DueDate\" AS \"DocDueDate\",T2.\"U_STXSOLineNum\" as \"VisOrder\",T4.\"U_NAME\" as \"Updated By\",T2.\"ObjType\"\n" +
+                            "from ORDR T0\n" +
+                            "inner join RDR1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
+                            "inner join OWOR T2 on T0.\"DocNum\" = T2.\"U_STXSONum\" and T1.\"LineNum\" = T2.\"U_STXSOLineNum\"\n" +
+                            "inner join \"@STXQC19\" T3 on T2.\"U_STXQC19ID\" = T3.\"DocEntry\"\n" +
+                            "inner join OUSR T4 on coalesce(T2.\"UserSign2\",T2.\"UserSign\") = T4.\"USERID\"\n" +
+                            "where T0.\"DocEntry\" = {0}),\n" +
+
                             "INVOICEInfo as (\n" +
 
-                            "Select 4 as \"FlowOrder\",'A/R Invoice' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
+                            "Select 40 as \"FlowOrder\",'A/R Invoice' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
                             "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\"\n" +
                             "from OINV T0\n" +
                             "inner join INV1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
@@ -100,6 +115,9 @@ namespace STXGen2
                             "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
                             "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from DELIVERYInfo T0\n" +
                             "union all\n" +
+                            "select coalesce(T0.\"U_ToolNum\",'') as \"Tool Num.\",T0.\"U_PartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from WOInfo T0\n" +
+                            "union all\n" +
                             "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
                             "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from INVOICEInfo T0\n" +
 
@@ -108,7 +126,6 @@ namespace STXGen2
             query = string.Format(query, relDocEntry);
             Grid0.DataTable.ExecuteQuery(query);
 
-            //this.UIAPIRawForm.Settings.Enabled = true; 
             // Setting up the columns
             for (int i = 0; i < Grid0.Columns.Count; i++)
             {
@@ -130,10 +147,10 @@ namespace STXGen2
             }
             Grid0.Item.Enabled = false;
             Grid0.CollapseLevel = 1;
+            Grid0.AutoResizeColumns();
         }
 
-        private Button Button0;
-        private Button Button1;
+
 
         private void Button0_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {

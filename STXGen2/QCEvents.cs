@@ -805,6 +805,7 @@ namespace STXGen2
 
         internal static void GetResultsfromFilter(IForm uIAPIRawForm, Matrix mOperations, string selectedValue)
         {
+
             Color selectionColor = Color.FromArgb(255, 0x83, 0xC5, 0x55);
             int selection = (selectionColor.R) + (selectionColor.G << 8) + (selectionColor.B << 16);
 

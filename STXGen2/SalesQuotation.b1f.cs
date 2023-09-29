@@ -12,8 +12,8 @@ namespace STXGen2
     class SystemForm1 : SystemFormBase
     {
 
-        public SAPbouiCOM.Conditions oCons;
-        public SAPbouiCOM.Condition oCon;
+        private SAPbouiCOM.Conditions oCons;
+        private SAPbouiCOM.Condition oCon;
 
         private string ItemCC1;
         private string ItemCC2;
@@ -125,6 +125,8 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeFormEvents()
         {
+            this.LoadAfter += new LoadAfterHandler(this.Form_LoadAfter);
+            this.ResizeAfter += new ResizeAfterHandler(this.Form_ResizeAfter);
 
         }
 

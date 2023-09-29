@@ -247,11 +247,41 @@ namespace STXGen2
                     int newObjType = int.Parse(newDocObjTypeStr);
                     int baseEntry = Convert.ToInt32(rs.Fields.Item("DocEntry").Value);
                     UpdateSalesOrderReference(baseEntry, newDocEntry, newObjType);
+                    UpdateQCIDWONum(newDocEntry);
                 }
                 
 
                 rs.MoveNext();
             }
+        }
+
+        private static void UpdateQCIDWONum(int newDocEntry)
+        {
+            SAPbobsCOM.Recordset rs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            string queryHeader = "select \"DocEntry\",\"DocNum\",T0.\"U_STXQC19ID\" from OWOR T0 where T0.\"DocEntry\" = {0}";
+
+            queryHeader = string.Format(queryHeader, newDocEntry);
+            rs.DoQuery(queryHeader);
+
+            string qcID19 = rs.Fields.Item("U_STXQC19ID").Value.ToString();
+            string woNum = rs.Fields.Item("DocNum").Value.ToString();
+            string woDocEntry = rs.Fields.Item("DocEntry").Value.ToString();
+
+
+            SAPbobsCOM.CompanyService oCompanyService = Utils.oCompany.GetCompanyService();
+            SAPbobsCOM.GeneralService oGeneralService = oCompanyService.GetGeneralService("STXQC19");
+
+
+            SAPbobsCOM.GeneralDataParams oParameters = (SAPbobsCOM.GeneralDataParams)oGeneralService.GetDataInterface(SAPbobsCOM.GeneralServiceDataInterfaces.gsGeneralDataParams);
+            oParameters.SetProperty("DocEntry", qcID19);
+
+            // Get the UDO entry you wish to duplicate
+            SAPbobsCOM.GeneralData oldEntry = oGeneralService.GetByParams(oParameters);
+            oldEntry.SetProperty("U_WONum", woNum);
+            oldEntry.SetProperty("U_WOEntry", woDocEntry);
+
+            oGeneralService.Update(oldEntry);
+
         }
 
         private static bool UpdateSalesOrderReference(int docEntry, int referencedDocEntry, int referencedObjectType)

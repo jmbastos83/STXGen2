@@ -37,6 +37,14 @@ namespace STXGen2
             this.ComboBox0 = ((SAPbouiCOM.ComboBox)(this.GetItem("WOType").Specific));
             this.LinkedButton0 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_8").Specific));
             this.EditText8 = ((SAPbouiCOM.EditText)(this.GetItem("Item_10").Specific));
+            this.StaticText0 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_7").Specific));
+            this.StaticText1 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_9").Specific));
+            this.StaticText2 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_11").Specific));
+            this.StaticText3 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_12").Specific));
+            this.StaticText4 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_13").Specific));
+            this.StaticText5 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_14").Specific));
+            this.StaticText6 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_15").Specific));
+            this.StaticText7 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_16").Specific));
             this.OnCustomInitialize();
 
         }
@@ -64,5 +72,13 @@ namespace STXGen2
 
         private SAPbouiCOM.LinkedButton LinkedButton0;
         private SAPbouiCOM.EditText EditText8;
+        private SAPbouiCOM.StaticText StaticText0;
+        private SAPbouiCOM.StaticText StaticText1;
+        private SAPbouiCOM.StaticText StaticText2;
+        private SAPbouiCOM.StaticText StaticText3;
+        private SAPbouiCOM.StaticText StaticText4;
+        private SAPbouiCOM.StaticText StaticText5;
+        private SAPbouiCOM.StaticText StaticText6;
+        private SAPbouiCOM.StaticText StaticText7;
     }
 }
