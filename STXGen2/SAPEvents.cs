@@ -106,15 +106,33 @@ namespace STXGen2
             }
         }
 
-        //internal static void SBO_Application_ItemEvent(string FormUID, ref ItemEvent pVal, out bool BubbleEvent)
-        //{
-        //    BubbleEvent = true;
-        //    if (pVal.ItemUID == "10000329" && pVal.EventType == BoEventTypes.et_COMBO_SELECT && pVal.PopUpIndicator == 0)
-        //    {
+        internal static void SBO_Application_ItemEvent(string FormUID, ref ItemEvent pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            if (FormUID == "RelationMap" && pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "Gresult" && pVal.BeforeAction)
+            {
+                SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("Gresult").Specific;
 
-        //    }
-            
-        //}
+                int rowIndex = oGrid.GetDataTableRowIndex(pVal.Row); // Get the Index on the datatable of the row selected on the grid
+
+                if (rowIndex >= 0 && oGrid.Rows.Count > rowIndex)
+                {
+                    try
+                    {
+                        string objtType = oGrid.DataTable.GetValue("ObjType", rowIndex).ToString();  // The value in the "ObjType" column of the clicked row
+
+                        SAPbouiCOM.EditTextColumn docNumColumn = (SAPbouiCOM.EditTextColumn)oGrid.Columns.Item("DocNum");
+                        docNumColumn.LinkedObjectType = objtType;  // Change LinkedObjectType based on the value in the "ObjType" column
+
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+            }
+        }
 
         internal static void SBO_Application_MenuEvent(ref MenuEvent pVal, out bool BubbleEvent)
         {
@@ -128,7 +146,7 @@ namespace STXGen2
             Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
             if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc")
             {
-                Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific; 
+                Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific;
 
                 if (selectedRow > -1)
                 {

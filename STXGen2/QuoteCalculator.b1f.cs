@@ -228,7 +228,9 @@ namespace STXGen2
             this.QCWidth.GotFocusAfter += new SAPbouiCOM._IEditTextEvents_GotFocusAfterEventHandler(this.QCWidth_GotFocusAfter);
             this.QCWidth.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.QCWidth_LostFocusAfter);
             this.QCArea = ((SAPbouiCOM.EditText)(this.GetItem("QCArea").Specific));
-            this.EditText4 = ((SAPbouiCOM.EditText)(this.GetItem("QCHeight").Specific));
+            this.QCHeight = ((SAPbouiCOM.EditText)(this.GetItem("QCHeight").Specific));
+            this.QCHeight.LostFocusAfter += new SAPbouiCOM._IEditTextEvents_LostFocusAfterEventHandler(this.QCHeight_LostFocusAfter);
+            this.QCHeight.GotFocusAfter += new SAPbouiCOM._IEditTextEvents_GotFocusAfterEventHandler(this.QCHeight_GotFocusAfter);
             this.StaticText0 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_0").Specific));
             this.StaticText1 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_1").Specific));
             this.StaticText2 = ((SAPbouiCOM.StaticText)(this.GetItem("Item_2").Specific));
@@ -558,48 +560,58 @@ namespace STXGen2
 
             if (pVal.ItemChanged == true && loadingForm == false)
             {
-                System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
-
-                // Get the selected Unit of Measure
-                SAPbouiCOM.ComboBox uomComboBox = (SAPbouiCOM.ComboBox)this.UIAPIRawForm.Items.Item("UnMsr").Specific;
-                selectedUOM = uomComboBox.Selected.Value;
-
-                // Get the current Length and Width values
-                EditText edtLength = (EditText)this.UIAPIRawForm.Items.Item("QCLength").Specific;
-                EditText edtWidth = (EditText)this.UIAPIRawForm.Items.Item("QCWidth").Specific;
-                EditText edtHeight = (EditText)this.UIAPIRawForm.Items.Item("QCHeight").Specific;
-
-                double length = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtLength.Value) ? "0" : edtLength.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
-                double width = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtWidth.Value) ? "0" : edtWidth.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
-                double height = double.Parse(Regex.Replace((string.IsNullOrEmpty(edtHeight.Value) ? "0" : edtHeight.Value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
-
-                // Perform the conversion based on the selected Unit of Measure
-                double convertedLength = DBCalls.ConvertDimensions(length, selectedUOM, previousUOM);
-                double convertedWidth = DBCalls.ConvertDimensions(width, selectedUOM, previousUOM);
-                double convertedHeight = DBCalls.ConvertDimensions(height, selectedUOM, previousUOM);
-
-                // Update the Length and Width fields with the converted values
-                edtLength.Value = $"{Math.Round(convertedLength, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
-                edtWidth.Value = $"{Math.Round(convertedWidth, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
-                edtHeight.Value = $"{Math.Round(convertedHeight, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
-
-                QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
-
-                // Prompt the user to confirm before updating the value of the edtLength control
-                if (selectedUOM != previousUOM)
+                try
                 {
-                    bool confirmUpdate = Program.SBO_Application.MessageBox("Do you want to update the lines coverage area with the new calculated area?", 1, "Yes", "No") == 1;
-                    if (confirmUpdate)
+                    this.UIAPIRawForm.Freeze(true);
+                    System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
+                    // Get the selected Unit of Measure
+                    SAPbouiCOM.ComboBox uomComboBox = (SAPbouiCOM.ComboBox)this.UIAPIRawForm.Items.Item("UnMsr").Specific;
+                    selectedUOM = uomComboBox.Selected.Value;
+
+                    // Get the current Length and Width values
+                    EditText edtLength = (EditText)this.UIAPIRawForm.Items.Item("QCLength").Specific;
+                    EditText edtWidth = (EditText)this.UIAPIRawForm.Items.Item("QCWidth").Specific;
+                    EditText edtHeight = (EditText)this.UIAPIRawForm.Items.Item("QCHeight").Specific;
+
+                    double length = HelperMethods.ParseDoubleWUOM(edtLength.Value, sapNumberFormat); 
+                    double width = HelperMethods.ParseDoubleWUOM(edtWidth.Value, sapNumberFormat); 
+                    double height = HelperMethods.ParseDoubleWUOM(edtHeight.Value, sapNumberFormat); 
+
+                    // Perform the conversion based on the selected Unit of Measure
+                    double convertedLength = DBCalls.ConvertDimensions(length, selectedUOM, previousUOM);
+                    double convertedWidth = DBCalls.ConvertDimensions(width, selectedUOM, previousUOM);
+                    double convertedHeight = DBCalls.ConvertDimensions(height, selectedUOM, previousUOM);
+
+                    // Update the Length and Width fields with the converted values
+                    edtLength.Value = $"{Math.Round(convertedLength, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
+                    edtWidth.Value = $"{Math.Round(convertedWidth, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
+                    edtHeight.Value = $"{Math.Round(convertedHeight, Utils.MeasureDec).ToString("N", sapNumberFormat)}";
+
+                    QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
+
+                    // Prompt the user to confirm before updating the value of the edtLength control
+                    if (selectedUOM != previousUOM)
                     {
-                        isUoMAreaChanging = true;
-                        QCEvents.UpdateCovArea(this.UIAPIRawForm, previousUOM, selectedUOM, isUoMAreaChanging);
+                        bool confirmUpdate = Program.SBO_Application.MessageBox("Do you want to update the lines coverage area with the new calculated area?", 1, "Yes", "No") == 1;
+                        if (confirmUpdate)
+                        {
+                            isUoMAreaChanging = true;
+                            QCEvents.UpdateCovArea(this.UIAPIRawForm, previousUOM, selectedUOM, isUoMAreaChanging);
+                        }
+                        else
+                        {
+                            QCEvents.UpdateCovArea(this.UIAPIRawForm, previousUOM, selectedUOM, isUoMAreaChanging);
+                        }
+                        edtLength.Item.Click(SAPbouiCOM.BoCellClickType.ct_Regular);
                     }
-                    else
-                    {
-                        QCEvents.UpdateCovArea(this.UIAPIRawForm, previousUOM, selectedUOM, isUoMAreaChanging);
-                    }
-                    edtLength.Item.Click(SAPbouiCOM.BoCellClickType.ct_Regular);
+                    uomComboBox.Active = true;
                 }
+                finally
+                {
+                    this.UIAPIRawForm.Freeze(false);
+                }
+               
             }
         }
 
@@ -1150,6 +1162,7 @@ namespace STXGen2
                                 this.mOperations.Clear();
                                 QCEvents.GetOperationsGrp(this.UIAPIRawForm);
                                 QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+
                             }
                         }
                         else
@@ -1187,6 +1200,7 @@ namespace STXGen2
                             this.mOperations.Clear();
                             QCEvents.GetOperations(this.UIAPIRawForm);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                            
                         }
                         break;
                 }
@@ -1196,6 +1210,7 @@ namespace STXGen2
             }
             finally
             {
+                PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
                 this.UIAPIRawForm.Freeze(false);
             }
           
@@ -1459,37 +1474,6 @@ namespace STXGen2
             }
         }
 
-        private void QCHeight_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
-            double qcHeight = 0;
-
-            if (currentHeight != QCHeight.Value)
-            {
-                if (lostFocusQCHeight)
-                {
-                    lostFocusQCHeight = false;
-                    return;
-                }
-                try
-                {
-                    qcHeight = double.Parse(this.QCHeight.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
-                }
-                catch (Exception)
-                {
-                    qcHeight = 0;
-                    Program.SBO_Application.SetStatusBarMessage("Please, place a numeric value.", BoMessageTime.bmt_Short, true);
-                }
-
-                string formattedQCHeight = qcHeight.ToString("#,0.00", sapNumberFormat);
-
-                this.QCHeight.Value = $"{formattedQCHeight} {selectedUOM}";
-                lostFocusQCHeight = true;
-
-            }
-
-        }
-
         private void mOperations_DoubleClickAfter(object sboObject, SBOItemEventArg pVal)
         {
             if (pVal.ItemUID == "mOper" && pVal.ColUID == "OPcheck")
@@ -1515,12 +1499,6 @@ namespace STXGen2
             }
 
         }
-
-        private void QCHeight_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
-        {
-            currentHeight = QCHeight.Value;
-        }
-
 
         private void OPFilter_ComboSelectAfter(object sboObject, SBOItemEventArg pVal)
         {
@@ -1584,40 +1562,42 @@ namespace STXGen2
         private void DefBOM_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
             int noperations = mOperations.RowCount;
-            if (this.DefBOM.Checked == true)
+            try
             {
-                if (noperations > 0)
+                this.UIAPIRawForm.Freeze(true);
+                if (this.DefBOM.Checked == true)
                 {
-                    bool confirmDefBom = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
-                    if (confirmDefBom)
-                    {
-                        this.mOperations.Clear();
-                        this.UIAPIRawForm.Freeze(true);
-                        QCEvents.GetDefOperations(this.UIAPIRawForm);
-                        QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
-                        this.UIAPIRawForm.Freeze(false);
-                    }
+                    //if (noperations > 0)
+                    //{
+                        bool confirmDefBom = Program.SBO_Application.MessageBox("This operation will clear the current operations. Do you want to continue?", 1, "Yes", "No") == 1;
+                        if (confirmDefBom)
+                        {
+                            this.mOperations.Clear();
+                            QCEvents.GetDefOperations(this.UIAPIRawForm);
+                            QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                        }
+                    //}
+                    //else
+                    //{
+                    //    this.mOperations.Clear();
+                    //    QCEvents.GetDefOperations(this.UIAPIRawForm);
+                    //    QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
+                    //}
+
                 }
                 else
                 {
                     this.mOperations.Clear();
-                    this.UIAPIRawForm.Freeze(true);
-                    QCEvents.GetDefOperations(this.UIAPIRawForm);
                     QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
-                    this.UIAPIRawForm.Freeze(false);
                 }
 
             }
-            else
+            finally
             {
-                this.UIAPIRawForm.Freeze(true);
-                this.mOperations.Clear();
-                QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                 this.UIAPIRawForm.Freeze(false);
-
+                PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
             }
-
-            PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
+            
         }
 
 
@@ -1896,5 +1876,41 @@ namespace STXGen2
             
         }
 
+        private void QCHeight_GotFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            currentHeight = QCHeight.Value;
+
+        }
+
+        private void QCHeight_LostFocusAfter(object sboObject, SBOItemEventArg pVal)
+        {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+            double qcHeight = 0;
+
+            if (currentHeight != QCHeight.Value)
+            {
+                if (lostFocusQCHeight)
+                {
+                    lostFocusQCHeight = false;
+                    return;
+                }
+                try
+                {
+                    qcHeight = double.Parse(this.QCHeight.Value, System.Globalization.NumberStyles.AllowDecimalPoint | System.Globalization.NumberStyles.AllowThousands, sapNumberFormat);
+                }
+                catch (Exception)
+                {
+                    qcHeight = 0;
+                    Program.SBO_Application.SetStatusBarMessage("Please, place a numeric value.", BoMessageTime.bmt_Short, true);
+                }
+
+                string formattedQCHeight = qcHeight.ToString("N", sapNumberFormat);
+
+                this.QCHeight.Value = $"{formattedQCHeight} {selectedUOM}";
+                QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
+                lostFocusQCHeight = true;
+            }
+
+        }
     }
 }

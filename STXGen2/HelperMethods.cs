@@ -38,6 +38,11 @@ namespace STXGen2
             return double.Parse(Regex.Replace((string.IsNullOrEmpty(value) ? "0" : value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, numberFormat);
 
         }
+        internal static double ParseDoubleWUOM(string value, NumberFormatInfo numberFormat)
+        {
+            return double.Parse(Regex.Replace((string.IsNullOrEmpty(value) ? "0" : value), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""), NumberStyles.AllowDecimalPoint | NumberStyles.AllowThousands, numberFormat);
+
+        }
         internal static string FormatValueCur(double value, string currency)
         {
             System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();

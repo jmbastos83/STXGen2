@@ -83,9 +83,9 @@ namespace STXGen2
             this.Matrix0.GotFocusAfter += new SAPbouiCOM._IMatrixEvents_GotFocusAfterEventHandler(this.Matrix0_GotFocusAfter);
             this.Matrix0.ChooseFromListAfter += new SAPbouiCOM._IMatrixEvents_ChooseFromListAfterEventHandler(this.Matrix0_ChooseFromListAfter);
             this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Revision").Specific));
-            this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("Item_1").Specific));
+            this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("DocTrak").Specific));
             this.Button1.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button1_PressedAfter);
-            this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("Item_0").Specific));
+            this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("RelMap").Specific));
             this.Button2.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button2_PressedAfter);
             this.OnCustomInitialize();
 
@@ -96,6 +96,7 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeFormEvents()
         {
+            this.LoadBefore += new LoadBeforeHandler(this.Form_LoadBefore);
 
         }
 
@@ -467,7 +468,7 @@ namespace STXGen2
 
             if (!IsFormOpen("RelationMap"))
             {
-                //RelationshipMap.openDocEntry = docEntry;
+                RelationshipMap.relDocEntry = docEntry;
                 formRelationshipMap = new RelationshipMap();
 
                 formRelationshipMap.UIAPIRawForm.Visible = true;
@@ -477,6 +478,17 @@ namespace STXGen2
                 SAPbouiCOM.Form existingForm = Program.SBO_Application.Forms.Item("RelationMap");
                 existingForm.Visible = true;
             }
+
+        }
+
+        private void Form_LoadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            if (pVal.FormMode == 0 || pVal.FormMode == 3)
+            {
+
+            }
+            throw new System.NotImplementedException();
 
         }
     }

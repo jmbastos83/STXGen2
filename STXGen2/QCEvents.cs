@@ -259,30 +259,34 @@ namespace STXGen2
 
         internal static void UpdateCovArea(IForm uIAPIRawForm, string previousUOM, string selectedUOM, bool isUoMAreaChanging)
         {
+            System.Globalization.NumberFormatInfo sapNumberFormat = Utils.GetSAPNumberFormatInfo();
+
             SAPbouiCOM.Form oForm = ((SAPbouiCOM.Form)uIAPIRawForm);
             SAPbouiCOM.Matrix mTextures = (SAPbouiCOM.Matrix)oForm.Items.Item("mTextures").Specific;
 
             // Loop through each row in the mtxQCItems Matrix control
             for (int i = 1; i <= mTextures.RowCount; i++)
             {
-
-                if (isUoMAreaChanging == true)
+                SAPbouiCOM.EditText selTexture = (SAPbouiCOM.EditText)mTextures.Columns.Item("QCTexture").Cells.Item(i).Specific;
+                if (!string.IsNullOrEmpty(selTexture.Value))
                 {
-                    SAPbouiCOM.EditText CovArea = (SAPbouiCOM.EditText)mTextures.Columns.Item("QCCovA").Cells.Item(i).Specific;
-                    SAPbouiCOM.EditText calArea = (SAPbouiCOM.EditText)oForm.Items.Item("QCArea").Specific;
+                    if (isUoMAreaChanging == true)
+                    {
+                        SAPbouiCOM.EditText CovArea = (SAPbouiCOM.EditText)mTextures.Columns.Item("QCCovA").Cells.Item(i).Specific;
+                        SAPbouiCOM.EditText calArea = (SAPbouiCOM.EditText)oForm.Items.Item("QCArea").Specific;
 
-                    CovArea.Value = calArea.Value;
+                        mTextures.SetCellWithoutValidation(i, "QCCovA", calArea.Value);
+                    }
+                    else
+                    {
+                        SAPbouiCOM.EditText CovArea = (SAPbouiCOM.EditText)mTextures.Columns.Item("QCCovA").Cells.Item(i).Specific;
+
+                        double covA = HelperMethods.ParseDoubleWUOM(CovArea.Value, sapNumberFormat); 
+                        double convertedcovA = DBCalls.ConvertAreaDimensions(covA, selectedUOM, previousUOM);
+                        string formattedValue = convertedcovA.ToString("N", sapNumberFormat);
+                        mTextures.SetCellWithoutValidation(i, "QCCovA", $"{formattedValue} {selectedUOM}²");
+                    }
                 }
-                else
-                {
-                    SAPbouiCOM.EditText CovArea = (SAPbouiCOM.EditText)mTextures.Columns.Item("QCCovA").Cells.Item(i).Specific;
-                    string treatedCovArea = (string)Regex.Replace(CovArea.Value, @"(\w)2", match => $"{match.Groups[1]}²");
-
-                    double covA = double.Parse(Regex.Replace((string.IsNullOrEmpty(treatedCovArea) ? "0" : treatedCovArea), $@"[^\d{Utils.decSep}{Utils.thousSep}]", ""));
-                    double convertedcovA = DBCalls.ConvertAreaDimensions(covA, selectedUOM, previousUOM);
-                    CovArea.Value = $"{convertedcovA} {selectedUOM}²";
-                }
-
             }
         }
 
@@ -295,8 +299,8 @@ namespace STXGen2
             EditText edtQCWidth = (EditText)oForm.Items.Item("QCWidth").Specific;
             EditText edtQCArea = (EditText)oForm.Items.Item("QCArea").Specific;
 
-            double length = HelperMethods.ParseDoubleWCur(edtQCLength.Value, sapNumberFormat);
-            double width = HelperMethods.ParseDoubleWCur(edtQCWidth.Value, sapNumberFormat);
+            double length = HelperMethods.ParseDoubleWUOM(edtQCLength.Value, sapNumberFormat);
+            double width = HelperMethods.ParseDoubleWUOM(edtQCWidth.Value, sapNumberFormat);
 
             double area = length * width;
             string areaFormatted = area.ToString("N", sapNumberFormat);
@@ -426,9 +430,6 @@ namespace STXGen2
                 oForm.Freeze(false);
             }
             
-            //QCEvents.OperationsTotal(oForm);
-            //QCEvents.OperationsTotalFilter(oForm, OPFilter.Selected.Value);
-            //QCEvents.OperationsTotalCosts(oForm);
         }
 
         internal static void RemoveLinefromTexturesMatrix(SAPbouiCOM.Form oForm, Matrix texturesMatrix, int selectedMatrixRow)
@@ -532,13 +533,13 @@ namespace STXGen2
                 string condition1 = $"WHEN T2.\"U_standexReference\" = '{textureCode}' AND T1.\"U_STXQtyBy\" = 'A' THEN {coverageArea}";
                 calcFactorList.Add(condition1);
 
-                string condition2 = $"WHEN R0.\"Texture\" = '{textureCode}' THEN (select \"U_Factor\" from \"@STXQC19TCLASS\" Where \"Code\" = {tClass})";
+                string condition2 = $"WHEN T2.\"U_standexReference\" = '{textureCode}' THEN (select \"U_Factor\" from \"@STXQC19TCLASS\" Where \"Code\" = {tClass})";
                 TextureClassList.Add(condition2);
 
                 string condition3 = $"WHEN {GeoComplex} = 1 then T1.\"Quantity\" when {GeoComplex} = 2 then T1.\"U_STXQTYGC2\" when {GeoComplex} = 3 then T1.\"U_STXQTYGC3\"";
                 OpQuantityList.Add(condition3);
 
-                string condition4 = $"{quantity}";
+                string condition4 = $"WHEN T2.\"U_standexReference\" = '{textureCode}' THEN {quantity}";
                 QtycFactorList.Add(condition4);
 
 
@@ -555,7 +556,7 @@ namespace STXGen2
             string OpQuantityExpression = $"(CASE {OPQty} ELSE 0 END) as \"Quantity\"";
 
             string QtyFactor = string.Join(" ", QtycFactorList);
-            string QtyFactorExpression = $"({QtyFactor})";
+            string QtyFactorExpression = $"(Case {QtyFactor} ELSE 1 END) as \"QtyFactor\"";
 
             return (calcFactorExpression, concatenatedTextureCodes, tClassExpression, OpQuantityExpression, QtyFactorExpression);
 
@@ -581,6 +582,19 @@ namespace STXGen2
         {
             var textureCodes = matrix1Values.Select(x => $"'{x["QCTexture"]}'");
             return string.Join(",", textureCodes);
+        }
+
+        internal static void GetDefOperations(IForm uIAPIRawForm)
+        {
+            processOperationsListErr = 0;
+
+            SAPbouiCOM.Matrix mOperations = (Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
+            SAPbouiCOM.Matrix matrix1 = (Matrix)uIAPIRawForm.Items.Item("mTextures").Specific;
+
+            List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
+
+            processOperationsList(uIAPIRawForm, matrix1Values);
+            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values);
         }
 
         internal static void GetOperations(IForm uIAPIRawForm)
@@ -750,7 +764,7 @@ namespace STXGen2
         {
             try
             {
-                uIAPIRawForm.Freeze(true);
+                //uIAPIRawForm.Freeze(true);
 
                 SAPbouiCOM.DataTable operations;
 
@@ -777,28 +791,17 @@ namespace STXGen2
             }
             catch (Exception ex)
             {
-
                 Program.SBO_Application.SetStatusBarMessage(ex.Message, BoMessageTime.bmt_Medium, true);
             }
-            finally
-            {
-                uIAPIRawForm.Freeze(false);
-            }
+
+            //finally
+            //{
+            //    uIAPIRawForm.Freeze(false);
+            //}
 
         }
 
-        internal static void GetDefOperations(IForm uIAPIRawForm)
-        {
-            processOperationsListErr = 0;
 
-            SAPbouiCOM.Matrix mOperations = (Matrix)uIAPIRawForm.Items.Item("mOper").Specific;
-            SAPbouiCOM.Matrix matrix1 = (Matrix)uIAPIRawForm.Items.Item("mTextures").Specific;
-
-            List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
-
-            processOperationsList(uIAPIRawForm, matrix1Values);
-            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values);
-        }
 
         internal static void GetResultsfromFilter(IForm uIAPIRawForm, Matrix mOperations, string selectedValue)
         {
