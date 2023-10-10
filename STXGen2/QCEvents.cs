@@ -14,6 +14,7 @@ using System.Xml.Linq;
 using SAPbouiCOM;
 using STXGen2.Properties;
 using System.Xml;
+using SAPbobsCOM;
 
 namespace STXGen2
 {
@@ -584,7 +585,7 @@ namespace STXGen2
             return string.Join(",", textureCodes);
         }
 
-        internal static void GetDefOperations(IForm uIAPIRawForm)
+        internal static void GetDefOperations(IForm uIAPIRawForm, int selectedRow)
         {
             processOperationsListErr = 0;
 
@@ -594,10 +595,10 @@ namespace STXGen2
             List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
 
             processOperationsList(uIAPIRawForm, matrix1Values);
-            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values);
+            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, selectedRow);
         }
 
-        internal static void GetOperations(IForm uIAPIRawForm)
+        internal static void GetOperations(IForm uIAPIRawForm, int selectedRow)
         {
             processOperationsListErr = 0;
 
@@ -611,7 +612,7 @@ namespace STXGen2
             switch (processOperationsListErr)
             {
                 case 0:
-                    processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values);
+                    processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, selectedRow);
                     break;
                 case 1:
                     Program.SBO_Application.SetStatusBarMessage("Selection of SPT missing.", BoMessageTime.bmt_Medium, false);
@@ -624,9 +625,12 @@ namespace STXGen2
             }
         }
 
-        private static void processMTOperationsList(IForm uIAPIRawForm, Matrix mOperations, List<Dictionary<string, string>> mtTexture)
+        private static void processMTOperationsList(IForm uIAPIRawForm, Matrix mOperations, List<Dictionary<string, string>> mtTexture, int selRow)
         {
             SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)uIAPIRawForm.DataSources.DBDataSources.Item("@STXQC19O");
+
+
+            var filteredOperations = QCEvents.GetFilteredOperations(uIAPIRawForm, selRow);
 
             var (CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, QtyFactorExpression) = QCEvents.GetAdditionalConditions(mtTexture);
 
@@ -645,11 +649,11 @@ namespace STXGen2
 
             if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
             {
-                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCItemCode").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression, filteredOperations);
             }
             else
             {
-                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression);
+                xmlOperations = DBCalls.GetOperation(operations, uIAPIRawForm, mOperations, CalcFactorConditions, concatenatedTextureCodes, tclassConditions, OpQuantityExpression, ((SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCSubPart").Specific).Value, ((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked, QtyFactorExpression, filteredOperations);
             }
 
             int operationscount = operations.Rows.Count;
@@ -690,6 +694,39 @@ namespace STXGen2
                 }
             }
         }
+
+        private static string GetFilteredOperations(IForm uIAPIRawForm,int selRow)
+        {
+
+            SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(Utils.ParentFormUID);
+            int objectType = parentForm.Type;
+            BoObjectTypes docobjtype = DBCalls.GetSAPObjectType(objectType.ToString());
+            string strObjType = DBCalls.GetSAPObjectLineStr(docobjtype);
+
+            SAPbouiCOM.Item docNumItem = parentForm.Items.Item("8");
+            SAPbouiCOM.EditText docNumEditText = (SAPbouiCOM.EditText)docNumItem.Specific;
+            string docNumber = docNumEditText.Value;
+
+            SAPbouiCOM.Matrix parentMatrix = (SAPbouiCOM.Matrix)parentForm.Items.Item("38").Specific;
+            SAPbouiCOM.EditText docLine = (SAPbouiCOM.EditText)parentMatrix.Columns.Item("110").Cells.Item(selRow).Specific;
+
+            string mainStrObjType = strObjType.Substring(0, 3);
+
+            SAPbouiCOM.EditText toolnum = (SAPbouiCOM.EditText)uIAPIRawForm.Items.Item("QCToolNum").Specific;
+
+            string calcFactorExpression = $"where X0.\"U_operationCode\" not in \n" +
+                                        $"(select \"U_opCode\" from \"@STXQC19O\" T0\n" +
+                                        $"inner join \"@STXOPERATIONS\" T1 on T0.\"U_opCode\" = T1.\"Code\"\n" +
+                                        $"where T0.\"DocEntry\" in (\n" +
+                                        $"SELECT T1.\"U_STXQC19ID\"\n" +
+                                        $"FROM O{mainStrObjType} T0\n" +
+                                        $"inner join {strObjType} T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
+                                        $"where \"DocNum\" = {docNumber} and T1.\"LineNum\" < {docLine.Value} and(T1.\"U_STXToolNum\" = '{toolnum.Value}' and coalesce(T1.\"U_STXToolNum\", '') <> '')) and \"U_opCode\" <> 'TC00-07' and T1.\"U_PlanType\" in ('I', 'F'))";
+
+
+            return calcFactorExpression;
+        }
+
 
         private static bool DataTableExists(IForm uIAPIRawForm, string dataTableID)
         {
@@ -982,11 +1019,6 @@ namespace STXGen2
 
             HelperMethods.UpdateEditText(uIAPIRawForm, "QCTEst", totalop + totalOC + totalsub);
 
-        }
-
-        internal static string ValidateRowInfo(string resCode)
-        {
-            throw new NotImplementedException();
         }
     }
 }

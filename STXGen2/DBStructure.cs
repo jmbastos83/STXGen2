@@ -542,6 +542,7 @@ namespace STXGen2
             AddFieldIfNotExists("QUT1", "STXPartName", "Part Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("QUT1", "STXLeadTime", "Lead Time", SAPbobsCOM.BoFieldTypes.db_Numeric, 3);
             AddFieldIfNotExists("QUT1", "STXQC19ID", "Q.Calc ID", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
+            AddFieldIfNotExists("QUT1", "STXWONum", "WorkOrder No.", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
 
 
             Dictionary<string, string> woType = new Dictionary<string, string>

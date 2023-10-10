@@ -24,7 +24,7 @@ namespace STXGen2
     {
         private const int FixedMatrixHeight = 110;
         bool loadingForm = true;
-
+        private int selectedRow = SAPEvents.selectedRow;
         public static string selectedUOM { get; set; } = "";
         public static string oldLengthValue { get; set; } = "";
         public static string oldWidthValue { get; set; } = "";
@@ -324,6 +324,7 @@ namespace STXGen2
         {
             this.ResizeAfter += new SAPbouiCOM.Framework.FormBase.ResizeAfterHandler(this.Form_ResizeAfter);
             this.UnloadBefore += new SAPbouiCOM.Framework.FormBase.UnloadBeforeHandler(this.Form_UnloadBefore);
+
         }
 
 
@@ -376,6 +377,7 @@ namespace STXGen2
                 AddRowIfMatrixEmpty();
                 MatrixSorting();
                 DisableFormWO();
+                DisableGTOperCC1(itemCode);
                 
                 this.Show();
             }
@@ -389,6 +391,16 @@ namespace STXGen2
                 SetFinalFormProperties();
                 this.UIAPIRawForm.Freeze(false);
             }
+        }
+
+        private void DisableGTOperCC1(string itemCode)
+        {
+            string tech1 = DBCalls.GetItemTech(itemCode);
+            if (tech1 != "MT" || tech1 != "LA" || tech1 != "CT")
+            {
+                this.BtnGetOPC.Item.Enabled = false;
+            }
+
         }
 
         private void DisableFormWO()
@@ -1070,7 +1082,7 @@ namespace STXGen2
                             }
 
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm);
+                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     }
@@ -1081,7 +1093,7 @@ namespace STXGen2
                             DefBOM.Checked = false;
                         }
                         this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm);
+                        QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                         QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                     }
                     break;
@@ -1122,7 +1134,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm);
+                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     }
@@ -1133,7 +1145,7 @@ namespace STXGen2
                             DefBOM.Checked = false;
                         }
                         this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm);
+                        QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                         QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                     }
                     break;
@@ -1160,7 +1172,7 @@ namespace STXGen2
                                 }
 
                                 this.mOperations.Clear();
-                                QCEvents.GetOperations(this.UIAPIRawForm);
+                                QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                                 QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             }
                         }
@@ -1171,7 +1183,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm);
+                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                         break;
@@ -1213,7 +1225,7 @@ namespace STXGen2
                                     DefBOM.Checked = false;
                                 }
                                 this.mOperations.Clear();
-                                QCEvents.GetOperations(this.UIAPIRawForm);
+                                QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                                 QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             }
                         }
@@ -1224,7 +1236,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm);
+                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             
                         }
@@ -1588,6 +1600,7 @@ namespace STXGen2
         private void DefBOM_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
             int noperations = mOperations.RowCount;
+            
             try
             {
                 this.UIAPIRawForm.Freeze(true);
@@ -1599,7 +1612,7 @@ namespace STXGen2
                         if (confirmDefBom)
                         {
                             this.mOperations.Clear();
-                            QCEvents.GetDefOperations(this.UIAPIRawForm);
+                            QCEvents.GetDefOperations(this.UIAPIRawForm,selectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     //}
@@ -1620,6 +1633,7 @@ namespace STXGen2
             }
             finally
             {
+                DisableGTOperCC1(QCItemCode.Value);
                 this.UIAPIRawForm.Freeze(false);
                 PictureBox0.Picture = QCEvents.SellMarginImage(this.UIAPIRawForm);
             }
@@ -1931,7 +1945,5 @@ namespace STXGen2
             }
 
         }
-
-
     }
 }

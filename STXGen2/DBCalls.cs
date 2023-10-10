@@ -374,7 +374,7 @@ namespace STXGen2
             return maxLineID;
         }
 
-        internal static string GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM,string QtyFactorExpression)
+        internal static string GetOperation(SAPbouiCOM.DataTable operations, IForm uIAPIRawForm, Matrix mOperations, string CalcFactor, string concatenatedTextureCodes, string tclassFactor, string OpQuantityExpression, string SptCode, bool DefBOM,string QtyFactorExpression,string filteredOperations)
         {
             string query = "";
             if (((SAPbouiCOM.CheckBox)uIAPIRawForm.Items.Item("DefBOM").Specific).Checked == true)
@@ -415,9 +415,10 @@ namespace STXGen2
                 ",R0.\"CalculatedQty\" as \"Qty\"\n" +
                 "FROM FilteredOperations R0\n" +
                 "LEFT JOIN ResourceCosts R1 ON R0.\"U_operationResource\" = R1.\"ResCode\") X0, OADM X1 \n" +
+                "{14}\n" +
                 "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
 
-                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM, QtyFactorExpression);
+                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM, QtyFactorExpression, filteredOperations);
 
             }
             else
@@ -460,9 +461,10 @@ namespace STXGen2
                 ",R0.\"CalculatedQty\" as \"Qty\"\n" +
                 "FROM FilteredOperations R0\n" +
                 "LEFT JOIN ResourceCosts R1 ON R0.\"U_operationResource\" = R1.\"ResCode\") X0, OADM X1 \n" +
+                "{14}\n" +
                 "order by X0.\"Order\",X0.\"Texture\",X0.\"U_groupOrder\",X0.\"U_operationOrder\"";
 
-                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM,QtyFactorExpression);
+                query = string.Format(query, CalcFactor, concatenatedTextureCodes, SptCode, tclassFactor, OpQuantityExpression, Utils.QtyDec, Utils.PriceDec, Utils.SumDec, Resources.mOperErr1, Resources.mOperErr2, Resources.mOperErr3, Resources.mOperErr4, DefBOM,QtyFactorExpression, filteredOperations);
 
             }
 
@@ -483,6 +485,21 @@ namespace STXGen2
                 Program.SBO_Application.SetStatusBarMessage(ex.Message);
                 return null;
             }
+        }
+
+        internal static string GetItemTech(string itemCode)
+        {
+            string cc1 = "";
+            string sSql = $"SELECT T0.\"U_STXCC1\" as \"Tech\" FROM OITM T0 WHERE T0.\"ItemCode\" ='{itemCode}'";
+            Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
+            rs.DoQuery(sSql);
+
+            if (!rs.EoF)
+            {
+                cc1 = (string)rs.Fields.Item("Tech").Value;
+            }
+
+            return cc1;
         }
 
         internal static void UpdateQCIDBaseDoc(string qcidValue, string sapdocEntry, string value)
@@ -994,7 +1011,7 @@ namespace STXGen2
             }
         }
 
-        private static string GetSAPObjectLineStr(BoObjectTypes objectType)
+        public static string GetSAPObjectLineStr(BoObjectTypes objectType)
         {
             // Create a dictionary to map BoObjectTypes to their string representations
             Dictionary<BoObjectTypes, string> objectMapping = new Dictionary<BoObjectTypes, string>

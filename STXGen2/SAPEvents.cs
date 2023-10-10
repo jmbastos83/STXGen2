@@ -132,6 +132,7 @@ namespace STXGen2
                     }
                 }
             }
+
         }
 
         internal static void SBO_Application_MenuEvent(ref MenuEvent pVal, out bool BubbleEvent)
@@ -272,6 +273,10 @@ namespace STXGen2
                         SAPbouiCOM.Framework.Application.SBO_Application.MessageBox("No matrix clicked.");
                     }
                 }
+            }
+            if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "1293")
+            {
+
             }
         }
 
