@@ -168,5 +168,35 @@ namespace STXGen2
             }
         }
 
+        internal static void OpenImage(string imagePath)
+        {
+            try
+            {
+                imagePath = Path.Combine(!Directory.Exists(Path.Combine(Utils.oCompany.BitMapPath, "Tools Images")) ? Utils.oCompany.BitMapPath : Path.Combine(Utils.oCompany.BitMapPath, "Tools Images"), imagePath);
+
+                // Ensure that the path exists
+                if (File.Exists(imagePath))
+                {
+                    
+
+                    // Option 1: Start the associated program to open the image file
+                    System.Diagnostics.Process.Start(imagePath);
+
+                    // Option 2: Open a form with a PictureBox to display the image
+                    // You would need to create a form with a PictureBox control and load the image into it
+                    // ShowImageForm(imagePath);
+                }
+                else
+                {
+                    // Handle the case where the image path does not exist
+                    Program.SBO_Application.SetStatusBarMessage("Image file not found.", SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle any exceptions that occur
+                Program.SBO_Application.SetStatusBarMessage("Error opening image: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+            }
+        }
     }
 }

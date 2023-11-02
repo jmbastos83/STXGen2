@@ -542,7 +542,7 @@ namespace STXGen2
             AddFieldIfNotExists("QUT1", "STXPartName", "Part Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("QUT1", "STXLeadTime", "Lead Time", SAPbobsCOM.BoFieldTypes.db_Numeric, 3);
             AddFieldIfNotExists("QUT1", "STXQC19ID", "Q.Calc ID", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
-            AddFieldIfNotExists("QUT1", "STXWONum", "WorkOrder No.", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
+            AddFieldIfNotExists("QUT1", "STXWONum", "WorkOrder No.", SAPbobsCOM.BoFieldTypes.db_Numeric, 11,"202",null);
 
 
             Dictionary<string, string> woType = new Dictionary<string, string>
@@ -563,7 +563,7 @@ namespace STXGen2
             AddFieldIfNotExists("OWOR", "STXCustName", "Fin. Customer Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("OWOR", "STXOEMPgm", "Brand Program", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
 
-            AddFieldIfNotExists("OWOR", "STXSalesEmployee", "Fin. Customer Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 30);
+            AddFieldIfNotExists("OWOR", "STXSalesEmployee", "Sales Employee", SAPbobsCOM.BoFieldTypes.db_Alpha, 30);
             AddFieldIfNotExists("OWOR", "STXLicTradNum", "Tax ID", SAPbobsCOM.BoFieldTypes.db_Alpha, 32);
 
             AddFieldIfNotExists("WOR1", "Texture", "Texture", SAPbobsCOM.BoFieldTypes.db_Alpha, 50);
@@ -611,7 +611,13 @@ namespace STXGen2
                     uFieldMDLocal.Type = fieldType;
                     uFieldMDLocal.EditSize = fieldSize;
 
-                    uFieldMDLocal.LinkedTable = RTable;
+                    if (!string.IsNullOrEmpty(RTable))
+                    {
+                        // Setting the linked table for the UDF
+                        uFieldMDLocal.LinkedSystemObject = (SAPbobsCOM.UDFLinkedSystemObjectTypesEnum)int.Parse(RTable);
+                        //uFieldMDLocal.LinkedTable = RTable;
+                    }
+                    //uFieldMDLocal.LinkedTable = RTable;
 
                     if (validValues != null && validValues.Count > 0)
                     {

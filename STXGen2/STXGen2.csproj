@@ -48,6 +48,25 @@
     <Reference Include="SAPBusinessOneSDK" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Delivery.b1f.cs">
+      <DependentUpon>Delivery.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="Draw Document Wizard.b1f.cs">
+      <DependentUpon>Draw Document Wizard.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="FormOperations.cs" />
+    <Compile Include="Goods Receipt.b1f.cs">
+      <DependentUpon>Goods Receipt.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="ToolFind.b1f.cs">
+      <DependentUpon>ToolFind.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="Transfer SO Customer.b1f.cs">
+      <DependentUpon>Transfer SO Customer.b1f</DependentUpon>
+    </Compile>
+    <Compile Include="Sales Order.b1f.cs">
+      <DependentUpon>Sales Order.b1f</DependentUpon>
+    </Compile>
     <Compile Include="Sales Quotation.b1f.cs">
       <DependentUpon>Sales Quotation.b1f</DependentUpon>
     </Compile>
@@ -60,9 +79,6 @@
       <DependentUpon>RelationshipMap.b1f</DependentUpon>
     </Compile>
     <Compile Include="ItemData.cs" />
-    <Compile Include="SalesOrder.b1f.cs">
-      <DependentUpon>SalesOrder.b1f</DependentUpon>
-    </Compile>
     <Compile Include="TempDataTable.cs" />
     <Compile Include="TempDataTableCell.cs" />
     <Compile Include="TempDataTableCells.cs" />
@@ -96,14 +112,35 @@
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
     </Compile>
-    <Compile Include="SalesQuotation.b1f.cs">
-      <DependentUpon>SalesQuotation.b1f</DependentUpon>
-    </Compile>
     <Compile Include="SAPEvents.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Delivery.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="Delivery.b1f__orig_srf">
+      <DependentUpon>Delivery.b1f</DependentUpon>
+    </None>
     <None Include="DocumentTracker.b1f">
+      <FormCategory>UserForm</FormCategory>
+    </None>
+    <None Include="Draw Document Wizard.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="Draw Document Wizard.b1f__orig_srf">
+      <DependentUpon>Draw Document Wizard.b1f</DependentUpon>
+    </None>
+    <None Include="Goods Receipt.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="Goods Receipt.b1f__orig_srf">
+      <DependentUpon>Goods Receipt.b1f</DependentUpon>
+    </None>
+    <None Include="ToolFind.b1f">
+      <FormCategory>UserForm</FormCategory>
+    </None>
+    <None Include="Transfer SO Customer.b1f">
       <FormCategory>UserForm</FormCategory>
     </None>
     <None Include="RelationshipMap.b1f">
@@ -112,23 +149,17 @@
     <None Include="QuoteCalculator.b1f">
       <FormCategory>UserForm</FormCategory>
     </None>
+    <None Include="Sales Order.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="Sales Order.b1f__orig_srf">
+      <DependentUpon>Sales Order.b1f</DependentUpon>
+    </None>
     <None Include="Sales Quotation.b1f">
       <FormCategory>SystemForm</FormCategory>
     </None>
     <None Include="Sales Quotation.b1f__orig_srf">
       <DependentUpon>Sales Quotation.b1f</DependentUpon>
-    </None>
-    <None Include="SalesQuotation.b1f">
-      <FormCategory>SystemForm</FormCategory>
-    </None>
-    <None Include="SalesQuotation.b1f__orig_srf">
-      <DependentUpon>SalesQuotation.b1f</DependentUpon>
-    </None>
-    <None Include="SalesOrder.b1f">
-      <FormCategory>SystemForm</FormCategory>
-    </None>
-    <None Include="SalesOrder.b1f__orig_srf">
-      <DependentUpon>SalesOrder.b1f</DependentUpon>
     </None>
     <None Include="WOFindSo.b1f">
       <FormCategory>UserForm</FormCategory>

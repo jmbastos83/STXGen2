@@ -130,7 +130,7 @@ namespace STXGen2
             for (int i = 0; i < Grid0.Columns.Count; i++)
             {
                 SAPbouiCOM.EditTextColumn column = (SAPbouiCOM.EditTextColumn)Grid0.Columns.Item(i);
-
+                column.Editable = false;
                 // Example: if you want to hide a specific column
                 if (column.UniqueID == "FlowOrder")
                 {
@@ -145,9 +145,10 @@ namespace STXGen2
                     docNumColumn.LinkedObjectType = "17";
                 }
             }
-            Grid0.Item.Enabled = false;
+            
             Grid0.CollapseLevel = 1;
             Grid0.AutoResizeColumns();
+            Grid0.Item.Enabled = false;
         }
 
 

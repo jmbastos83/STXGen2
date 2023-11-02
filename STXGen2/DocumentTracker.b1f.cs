@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using SAPbouiCOM;
 using SAPbouiCOM.Framework;
+using System.Threading.Tasks;
 
 namespace STXGen2
 {
@@ -37,6 +38,7 @@ namespace STXGen2
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
             this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("Item_3").Specific));
             this.Button2.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button2_PressedAfter);
+            this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Item_0").Specific));
             this.OnCustomInitialize();
 
         }
@@ -62,8 +64,6 @@ namespace STXGen2
         private void BindDataTableToMatrix(string tableName, string matrixUID, string docEntry)
         {
             bool tableExists = false;
-            //SAPbouiCOM.DataTable oDataTable;
-
             var dataTables = this.UIAPIRawForm.DataSources.DataTables;
             if (dataTables.Count != 0)
             {
@@ -86,15 +86,27 @@ namespace STXGen2
             }
 
             DBCalls.DocumentTrackerInfo(oDataTable, docEntry);
-            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item(matrixUID).Specific;
 
+            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item(matrixUID).Specific;
             oMatrix.Clear();
-            for (int i = 0; i < oMatrix.Columns.Count; i++)
+
+            // Cache the column count for the matrix to avoid repeated calls to oMatrix.Columns.Count
+            int columnCount = oMatrix.Columns.Count;
+
+            var dataTableColumnNames = new HashSet<string>();
+            for (int j = 0; j < oDataTable.Columns.Count; j++)
             {
-                string colUid = oMatrix.Columns.Item(i).UniqueID;
-                if (ColumnExists(oDataTable, colUid))
+                dataTableColumnNames.Add(oDataTable.Columns.Item(j).Name);
+            }
+
+            for (int i = 0; i < columnCount; i++)
+            {
+                SAPbouiCOM.Column column = oMatrix.Columns.Item(i);
+                string colUid = column.UniqueID;
+
+                if (dataTableColumnNames.Contains(colUid))
                 {
-                    oMatrix.Columns.Item(colUid).DataBind.Bind(tableName, colUid);
+                    column.DataBind.Bind(tableName, colUid);
                 }
             }
 
@@ -115,7 +127,7 @@ namespace STXGen2
         private void Matrix0_PressedBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
-            if (pVal.ItemUID == "mtDTrac" && pVal.ColUID == "Check")
+            if (pVal.ItemUID == "mtDTrac" && pVal.ColUID == "Check" && pVal.Row >0)
             {
                 SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mtDTrac").Specific;
                 SAPbouiCOM.EditText woNum = (SAPbouiCOM.EditText)oMatrix.Columns.Item("WONum").Cells.Item(pVal.Row).Specific;
@@ -136,39 +148,63 @@ namespace STXGen2
 
         private void Button2_PressedAfter(object sboObject, SBOItemEventArg pVal)
         {
-            SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mtDTrac").Specific;
-
-            // 1. Get all selected rows from Matrix
-            List<int> selectedRows = new List<int>();
-            for (int i = 1; i <= oMatrix.RowCount; i++)
+            try
             {
-                SAPbouiCOM.CheckBox check = (SAPbouiCOM.CheckBox)oMatrix.Columns.Item("Check").Cells.Item(i).Specific;
-                if (check.Checked == true)
+                this.UIAPIRawForm.Freeze(true);
+                SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mtDTrac").Specific;
+
+                // 1. Get all selected rows from Matrix
+                List<int> selectedRows = new List<int>();
+                for (int i = 1; i <= oMatrix.RowCount; i++)
                 {
-                    selectedRows.Add(i);
+                    SAPbouiCOM.CheckBox check = (SAPbouiCOM.CheckBox)oMatrix.Columns.Item("Check").Cells.Item(i).Specific;
+                    if (check.Checked == true)
+                    {
+                        selectedRows.Add(i);
+                    }
                 }
-            }
 
-            //2. Get the information required from QCID and The Sales Order to create Production order for each line
-            foreach (int rowIndex in selectedRows)
+                var rowsData = selectedRows.Select(rowIndex => new
+                {
+                    SalesOrder = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("SONum").Cells.Item(rowIndex).Specific).Value,
+                    LineNum = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("docLine").Cells.Item(rowIndex).Specific).Value
+                }).ToList();
+
+                Parallel.ForEach(rowsData, row =>
+                {
+                    DBCalls.CreateProductionOrder(row.SalesOrder, row.LineNum);
+                });
+
+                BindDataTableToMatrix("DocTrackInfo", "mtDTrac", openDocEntry);
+            }
+            catch (Exception)
             {
-                string salesOrder = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("SONum").Cells.Item(rowIndex).Specific).Value;
-                string LineNum = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("docLine").Cells.Item(rowIndex).Specific).Value;
-
-                // 3. Create the Production order based on the retrieved salesOrder. You will need to implement this logic.
-                DBCalls.CreateProductionOrder(salesOrder, LineNum);
+                //MISSING LOG
             }
-
-            BindDataTableToMatrix("DocTrackInfo", "mtDTrac", openDocEntry);
+            finally
+            {
+                this.UIAPIRawForm.Freeze(false);
+            }
+           
         }
 
         private void Form_UnloadBefore(SBOItemEventArg pVal, out bool BubbleEvent)
         {
             BubbleEvent = true;
-            SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(Utils.ParentFormUID);
-            parentForm.Select();
-            Program.SBO_Application.ActivateMenuItem("1304");
+            //ERRO
+            try
+            {
+                SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(Utils.ParentFormUID);
+                parentForm.Select();
+            }
+            finally
+            {
+                Program.SBO_Application.ActivateMenuItem("1304");
+            }
+            
 
         }
+
+        private EditText EditText0;
     }
 }

@@ -396,7 +396,7 @@ namespace STXGen2
         private void DisableGTOperCC1(string itemCode)
         {
             string tech1 = DBCalls.GetItemTech(itemCode);
-            if (tech1 != "MT" || tech1 != "LA" || tech1 != "CT")
+            if (tech1 != "MT" && tech1 != "LA" && tech1 != "CT")
             {
                 this.BtnGetOPC.Item.Enabled = false;
             }
@@ -1012,7 +1012,11 @@ namespace STXGen2
 
                 SAPbouiCOM.ChooseFromList oCfl = this.UIAPIRawForm.ChooseFromLists.Item("cflSPart");
                 SAPbobsCOM.Recordset oRS = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
-                string strSQL = $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE left(OITM.\"ItemCode\",6) = left('{this.QCPartType.Value}',6) and OITM.\"ItemCode\" not like 'SPT-%00'";
+                // string strSQL = $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE left(OITM.\"ItemCode\",6) = left('{this.QCPartType.Value}',6) and OITM.\"ItemCode\" not like 'SPT-%00'";
+                string strSQL = string.IsNullOrEmpty(this.QCPartType.Value)
+                 ? $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE OITM.\"ItemCode\" like 'SPT-%' and right(OITM.\"ItemCode\",2) != '00'"
+                 : $"SELECT OITM.\"ItemCode\", OITM.\"ItemName\" as \"Part Name\" FROM OITM WHERE left(OITM.\"ItemCode\",6) = left('{this.QCPartType.Value}',6) and OITM.\"ItemCode\" like 'SPT-%' and right(OITM.\"ItemCode\",2) != '00'";
+
                 oRS.DoQuery(strSQL);
 
                 oCons = null;
@@ -1037,6 +1041,7 @@ namespace STXGen2
                         }
                     } while (!oRS.EoF);
                 }
+
                 oCfl.SetConditions(oCons);
             }
             catch (Exception ex)

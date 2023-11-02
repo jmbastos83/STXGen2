@@ -60,6 +60,8 @@ namespace STXGen2
             oColumn.Editable = false;
             oColumn = oMatrix.Columns.Item("U_STXLeadTime");
             oColumn.Editable = false;
+            oColumn = oMatrix.Columns.Item("U_STXWONum");
+            oColumn.Editable = false;
         }
 
         internal static void QCIDColumnsEnable(IForm UIAPIRawForm)
@@ -75,6 +77,18 @@ namespace STXGen2
             oColumn.Editable = true;
             oColumn = oMatrix.Columns.Item("U_STXLeadTime");
             oColumn.Editable = true;
+        }
+
+        internal static void DisableBrandInfo(IForm uIAPIRawForm)
+        {
+            SAPbouiCOM.Item eMkseg1 = uIAPIRawForm.Items.Item("MKSeg1");
+            eMkseg1.Enabled = false;
+        }
+
+        internal static void EnableBrandInfo(IForm uIAPIRawForm)
+        {
+            SAPbouiCOM.Item eMkseg1 = uIAPIRawForm.Items.Item("MKSeg1");
+            eMkseg1.Enabled = true;
         }
     }
 }

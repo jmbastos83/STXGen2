@@ -16,6 +16,9 @@ namespace STXGen2
 
         private static float exRate = 1;
         private static bool isEventBeingProcessed = false;
+        private static bool docCancelation = false;
+        private static string cancelDocEntry;
+        public static bool manualQCIDCreation;
 
         public static string itemCode { get; private set; }
         public static string itemName { get; private set; }
@@ -24,6 +27,7 @@ namespace STXGen2
         public static string lastClickedMatrixUID { get; set; }
         public static int selectedRow { get; set; }
         public static int SysFormLine { get; private set; }
+        public static bool cancelSAPOperation { get; private set; }
 
         internal static void SBO_Application_RightClickEvent(ref ContextMenuInfo eventInfo, out bool BubbleEvent)
         {
@@ -108,7 +112,9 @@ namespace STXGen2
 
         internal static void SBO_Application_ItemEvent(string FormUID, ref ItemEvent pVal, out bool BubbleEvent)
         {
+
             BubbleEvent = true;
+
             if (FormUID == "RelationMap" && pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "Gresult" && pVal.BeforeAction)
             {
                 SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
@@ -133,6 +139,134 @@ namespace STXGen2
                 }
             }
 
+            if (pVal.FormType == 0 && pVal.EventType == SAPbouiCOM.BoEventTypes.et_ITEM_PRESSED && pVal.BeforeAction)
+            {
+                if (pVal.ItemUID == "1")
+                {
+                    cancelSAPOperation = false;
+                }
+                if (pVal.ItemUID == "2")
+                {
+                    cancelSAPOperation = true;
+                }
+
+            }
+
+            if (pVal.FormTypeCount == 2 && pVal.EventType == SAPbouiCOM.BoEventTypes.et_CLICK && pVal.ItemUID == "1" && !pVal.BeforeAction && pVal.ActionSuccess)
+            {
+                docCancelation = true;
+            }
+
+
+            if (FormUID == "DocTracker" && pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "mtDTrac" && pVal.ColUID == "WONum" && pVal.BeforeAction)
+            {
+                SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)oForm.Items.Item("mtDTrac").Specific;
+
+
+                try
+                {
+                    string woNumValue = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("WONum").Cells.Item(pVal.Row).Specific).Value;
+                    string docentryWO = DBCalls.getWODocEntry(woNumValue);
+
+                    // Cancel the default linked button behavior
+                    BubbleEvent = false;
+
+                    Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_ProductionOrder, "", docentryWO);
+                }
+                catch (Exception ex)
+                {
+                    Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                }
+            }
+
+            if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "38" && pVal.ColUID == "U_STXWONum" && pVal.BeforeAction)
+            {
+                SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)oForm.Items.Item("38").Specific;
+
+                try
+                {
+                    string woNumValue = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("U_STXWONum").Cells.Item(pVal.Row).Specific).Value;
+                    string docentryWO = DBCalls.getWODocEntry(woNumValue);
+
+                    // Cancel the default linked button behavior
+                    BubbleEvent = false;
+
+                    Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_ProductionOrder, "", docentryWO);
+                }
+                catch (Exception ex)
+                {
+                    Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                }
+            }
+
+            if (FormUID == "ToolFindUI")
+            {
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "gdTInfo" && pVal.ColUID == "Sales Order" && pVal.BeforeAction)
+                {
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("gdTInfo").Specific;
+
+                    try
+                    {
+                        string soNum = oGrid.DataTable.GetValue("Sales Order", pVal.Row).ToString();
+                        string docentrySO = DBCalls.getSODocEntry(soNum);
+
+                        // Cancel the default linked button behavior
+                        BubbleEvent = false;
+
+                        Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_Order, "", docentrySO);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "gdTInfo" && pVal.ColUID == "Quote Number" && pVal.BeforeAction)
+                {
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("gdTInfo").Specific;
+
+                    try
+                    {
+                        string soNum = oGrid.DataTable.GetValue("Quote Number", pVal.Row).ToString();
+                        string docentryQT = DBCalls.getQTDocEntry(soNum);
+
+                        // Cancel the default linked button behavior
+                        BubbleEvent = false;
+
+                        Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_Quotation, "", docentryQT);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "gdTInfo" && pVal.ColUID == "Tool Number" && pVal.BeforeAction)
+                {
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("gdTInfo").Specific;
+
+                    try
+                    {
+                        string imagePath = oGrid.DataTable.GetValue("Picture", pVal.Row).ToString();
+
+                        if (!string.IsNullOrEmpty(imagePath))
+                        {
+                            // Open the image using your custom method
+                            Utils.OpenImage(imagePath);
+                        }
+                        BubbleEvent = false;
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+            }
         }
 
         internal static void SBO_Application_MenuEvent(ref MenuEvent pVal, out bool BubbleEvent)
@@ -149,21 +283,26 @@ namespace STXGen2
             if (activeForm.TypeEx == "139" && (activeForm.Mode == BoFormMode.fm_FIND_MODE || activeForm.Mode == BoFormMode.fm_ADD_MODE))
             {
 
-// APPLY THE IF EXIST ON THE BUTTONS
-
                 activeForm.Freeze(true);
-                SAPbouiCOM.Button relMap = activeForm.Items.Item("RelMap") as SAPbouiCOM.Button;
-                if (relMap != null)
+                SAPbouiCOM.Item itemRelmap = activeForm.Items.Item("RelMap");
+                if (itemRelmap != null)
                 {
-                    relMap.Item.Enabled = false;
+                    SAPbouiCOM.Button relMap = itemRelmap.Specific as SAPbouiCOM.Button;
+                    if (relMap != null)
+                    {
+                        relMap.Item.Enabled = false;
+                    }
                 }
 
-                SAPbouiCOM.Button docTrack = activeForm.Items.Item("DocTrak") as SAPbouiCOM.Button;
-                if (docTrack != null)
+                SAPbouiCOM.Item itemTracker = activeForm.Items.Item("DocTrak");
+                if (itemTracker != null)
                 {
-                    docTrack.Item.Enabled = false;
+                    SAPbouiCOM.Button docTrack = itemTracker.Specific as SAPbouiCOM.Button;
+                    if (docTrack != null)
+                    {
+                        docTrack.Item.Enabled = false;
+                    }
                 }
-                
                 activeForm.Freeze(false);
             }
 
@@ -207,48 +346,72 @@ namespace STXGen2
                             float.TryParse(ExRate.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out exRate);
                             break;
                     }
-
-                    if (string.IsNullOrEmpty(qcid))
+                    try
                     {
-                        frmQCalc = new QuoteCalculator();
-                        Utils.ParentFormUID = activeForm.UniqueID;
-
-                        string formTypeEx = activeForm.TypeEx;
-                        string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
-
-                        SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
-                        string DocEntry = oDBDS.GetValue("DocEntry", 0);
-                        string ObjType = oDBDS.GetValue("ObjType", 0);
-
-                        qcid = frmQCalc.AddUDO(DocEntry, ObjType, mLinenum);
-                        //nQCalc.UpdateUDO(qcid, DocEntry, ObjType, mLinenum);
-
-                        SAPbouiCOM.Matrix mDocLines = ((SAPbouiCOM.Matrix)(activeForm.Items.Item("38").Specific));
-                        mDocLines.Columns.Item("U_STXQC19ID").Editable = true;
-                        etQCID.Value = qcid;
-
-                        activeForm.Items.Item("1").Click();
-                        mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
-                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
-                    }
-                    else
-                    {
-                        string formTypeEx = activeForm.TypeEx;
-                        string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
-
-                        SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
-                        string DocEntry = oDBDS.GetValue("DocEntry", 0);
-                        string ObjType = oDBDS.GetValue("ObjType", 0);
-
-                        frmQCalc = new QuoteCalculator();
-
-                        Utils.ParentFormUID = activeForm.UniqueID;
-                        if (activeForm.Mode == BoFormMode.fm_UPDATE_MODE)
+                        activeForm.Freeze(true);
+                        if (string.IsNullOrEmpty(qcid) || qcid == "0")
                         {
+                            frmQCalc = new QuoteCalculator();
+                            Utils.ParentFormUID = activeForm.UniqueID;
+
+                            string formTypeEx = activeForm.TypeEx;
+                            string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
+
+                            SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
+                            string DocEntry = oDBDS.GetValue("DocEntry", 0);
+                            string ObjType = oDBDS.GetValue("ObjType", 0);
+
+                            qcid = frmQCalc.AddUDO(DocEntry, ObjType, mLinenum);
+                            //nQCalc.UpdateUDO(qcid, DocEntry, ObjType, mLinenum);
+
+                            SAPbouiCOM.Matrix mDocLines = ((SAPbouiCOM.Matrix)(activeForm.Items.Item("38").Specific));
+                            mDocLines.Columns.Item("U_STXQC19ID").Editable = true;
+                            etQCID.Value = qcid;
+
+                            manualQCIDCreation = true;
                             activeForm.Items.Item("1").Click();
+                            manualQCIDCreation = false;
+                            if (!cancelSAPOperation)
+                            {
+                                mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
+                                frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
+                            }
+                            else
+                            {
+                                //DBCalls.revertQCIDCreation(qcid);
+                                //etQCID.Value = string.Empty;
+                                ((SAPbouiCOM.EditText)mDocLines.Columns.Item("1").Cells.Item(selectedRow).Specific).Active = true;
+                                mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
+                            }
                         }
-                        frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
+                        else
+                        {
+                            string formTypeEx = activeForm.TypeEx;
+                            string objectTypeCode = DBCalls.GetObjectTypeCodeByFormType(formTypeEx);
+
+                            SAPbouiCOM.DBDataSource oDBDS = activeForm.DataSources.DBDataSources.Item(objectTypeCode);
+                            string DocEntry = oDBDS.GetValue("DocEntry", 0);
+                            string ObjType = oDBDS.GetValue("ObjType", 0);
+
+                            frmQCalc = new QuoteCalculator();
+
+                            Utils.ParentFormUID = activeForm.UniqueID;
+                            if (activeForm.Mode == BoFormMode.fm_UPDATE_MODE)
+                            {
+                                activeForm.Items.Item("1").Click();
+                            }
+                            frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage(ex.ToString(), BoMessageTime.bmt_Short, false);
+                    }
+                    finally
+                    {
+                        activeForm.Freeze(false);
+                    }
+                    
 
                 }
                 else
@@ -274,9 +437,29 @@ namespace STXGen2
                     }
                 }
             }
-            if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "1293")
+            if (activeForm.TypeEx == "139" && pVal.BeforeAction && pVal.MenuUID == "1293")
             {
+                bool canDelete = DBCalls.VerifyWOCreated(activeForm, selectedRow);
+                if (!canDelete)
+                {
+                    BubbleEvent = false;
+                }
+            }
 
+            if (activeForm.TypeEx == "65211" && pVal.BeforeAction && pVal.MenuUID == "1284")
+            {
+                SAPbouiCOM.DBDataSource dbDataSource = (SAPbouiCOM.DBDataSource)activeForm.DataSources.DBDataSources.Item(0);
+                cancelDocEntry = dbDataSource.GetValue("DocEntry", 0).Trim();
+
+            }
+            if (activeForm.TypeEx == "65211" && !pVal.BeforeAction && pVal.MenuUID == "1284")
+            {
+                if (docCancelation)
+                {
+                    DBCalls.QCIDUpdateWOinfo(activeForm, cancelDocEntry);
+                    docCancelation = false;
+                }
+               
             }
         }
 
