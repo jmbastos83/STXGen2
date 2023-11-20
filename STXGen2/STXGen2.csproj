@@ -58,6 +58,9 @@
     <Compile Include="Goods Receipt.b1f.cs">
       <DependentUpon>Goods Receipt.b1f</DependentUpon>
     </Compile>
+    <Compile Include="Item Master Data.b1f.cs">
+      <DependentUpon>Item Master Data.b1f</DependentUpon>
+    </Compile>
     <Compile Include="ToolFind.b1f.cs">
       <DependentUpon>ToolFind.b1f</DependentUpon>
     </Compile>
@@ -136,6 +139,12 @@
     </None>
     <None Include="Goods Receipt.b1f__orig_srf">
       <DependentUpon>Goods Receipt.b1f</DependentUpon>
+    </None>
+    <None Include="Item Master Data.b1f">
+      <FormCategory>SystemForm</FormCategory>
+    </None>
+    <None Include="Item Master Data.b1f__orig_srf">
+      <DependentUpon>Item Master Data.b1f</DependentUpon>
     </None>
     <None Include="ToolFind.b1f">
       <FormCategory>UserForm</FormCategory>

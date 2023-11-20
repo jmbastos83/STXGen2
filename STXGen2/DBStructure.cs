@@ -293,7 +293,7 @@ namespace STXGen2
             }
         }
 
-        private static void RegisterUDO(string udoCode, string udoName, BoUDOObjType udoType , string udtName)
+        private static void RegisterUDO(string udoCode, string udoName, BoUDOObjType udoType, string udtName)
         {
             UserObjectsMD oUDO = null;
 
@@ -420,7 +420,7 @@ namespace STXGen2
                 System.Runtime.InteropServices.Marshal.ReleaseComObject(oCompanyService);
                 oCompanyService = null;
                 GC.Collect();
-            }          
+            }
         }
 
         private static Dictionary<string, string> GetFindFormFields(string udtName)
@@ -509,7 +509,7 @@ namespace STXGen2
         internal static void VerifyUDF()
         {
             GC.Collect();
-            AddFieldIfNotExists("OQUT", "STXOEMPgm", "Brand Program", SAPbobsCOM.BoFieldTypes.db_Alpha,100);
+            AddFieldIfNotExists("OQUT", "STXOEMPgm", "Brand Program", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("OQUT", "STXBrand", "Brand", SAPbobsCOM.BoFieldTypes.db_Alpha, 30);
             AddFieldIfNotExists("OQUT", "STXOEM", "OEM", SAPbobsCOM.BoFieldTypes.db_Alpha, 30);
             AddFieldIfNotExists("OQUT", "STXMarSeg", "Market Segment 1", SAPbobsCOM.BoFieldTypes.db_Alpha, 50);
@@ -520,12 +520,13 @@ namespace STXGen2
             AddFieldIfNotExists("OQUT", "STXMSEGID2", "Market Segment 2 (ID)", SAPbobsCOM.BoFieldTypes.db_Alpha, 10);
             AddFieldIfNotExists("OQUT", "STXBRANDID", "Brand ID", SAPbobsCOM.BoFieldTypes.db_Alpha, 10);
 
-            AddFieldIfNotExists("OQUT", "STXSONum", "Sales order", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
-            AddFieldIfNotExists("OQUT", "STX_CustCode", "Código de Cliente", SAPbobsCOM.BoFieldTypes.db_Alpha, 15);
-            AddFieldIfNotExists("OQUT", "STX_Customer", "Nome de Cliente", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
+            AddFieldIfNotExists("OQUT", "STXSONum", "Sales order", SAPbobsCOM.BoFieldTypes.db_Alpha, 11);
+            AddFieldIfNotExists("OQUT", "STX_CustCode", "Customer Code", SAPbobsCOM.BoFieldTypes.db_Alpha, 15);
+            AddFieldIfNotExists("OQUT", "STX_Customer", "Customer Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
+            AddFieldIfNotExists("OQUT", "STXLicTradNum", "VAT Number", SAPbobsCOM.BoFieldTypes.db_Alpha, 32);
 
             AddFieldIfNotExists("OQUT", "STXToolNum", "Tool Number", SAPbobsCOM.BoFieldTypes.db_Alpha, 20);
-            
+
 
 
             Dictionary<string, string> saleTypes = new Dictionary<string, string>
@@ -534,7 +535,7 @@ namespace STXGen2
                 {"IS", "Inside Sale"}
             };
 
-            AddFieldIfNotExists("OQUT", "SaleType", "Type of Sale", SAPbobsCOM.BoFieldTypes.db_Alpha, 10,null,saleTypes);
+            AddFieldIfNotExists("OQUT", "SaleType", "Type of Sale", SAPbobsCOM.BoFieldTypes.db_Alpha, 10, null, saleTypes);
             AddFieldIfNotExists("OQUT", "STXRevision", "Revision", SAPbobsCOM.BoFieldTypes.db_Alpha, 2);
 
             AddFieldIfNotExists("QUT1", "STXPartNum", "Part Number", SAPbobsCOM.BoFieldTypes.db_Alpha, 50);
@@ -542,7 +543,7 @@ namespace STXGen2
             AddFieldIfNotExists("QUT1", "STXPartName", "Part Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("QUT1", "STXLeadTime", "Lead Time", SAPbobsCOM.BoFieldTypes.db_Numeric, 3);
             AddFieldIfNotExists("QUT1", "STXQC19ID", "Q.Calc ID", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
-            AddFieldIfNotExists("QUT1", "STXWONum", "WorkOrder No.", SAPbobsCOM.BoFieldTypes.db_Numeric, 11,"202",null);
+            AddFieldIfNotExists("QUT1", "STXWONum", "WorkOrder No.", SAPbobsCOM.BoFieldTypes.db_Numeric, 11, "202", null);
 
 
             Dictionary<string, string> woType = new Dictionary<string, string>
@@ -555,10 +556,10 @@ namespace STXGen2
                 {"Internal(Repair/Maintenance)", "Internal(Repair/Maintenance)"},
                 {"Revenue - % of Completion", "Revenue - % of Completion"}
             };
-            AddFieldIfNotExists("OWOR", "STXSONum", "Sales order", SAPbobsCOM.BoFieldTypes.db_Numeric, 11);
+            AddFieldIfNotExists("OWOR", "STXSONum", "Sales order", SAPbobsCOM.BoFieldTypes.db_Alpha, 11);
             AddFieldIfNotExists("OWOR", "STXSOLineNum", "SO Line", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
             AddFieldIfNotExists("OWOR", "STXQC19ID", "Q. Calc ID", SAPbobsCOM.BoFieldTypes.db_Numeric, 11);
-            AddFieldIfNotExists("OWOR", "STXWOType", "WO Type", SAPbobsCOM.BoFieldTypes.db_Alpha, 50,null, woType);
+            AddFieldIfNotExists("OWOR", "STXWOType", "WO Type", SAPbobsCOM.BoFieldTypes.db_Alpha, 50, null, woType);
             AddFieldIfNotExists("OWOR", "STXWOBrand", "Brand", SAPbobsCOM.BoFieldTypes.db_Alpha, 30);
             AddFieldIfNotExists("OWOR", "STXCustName", "Fin. Customer Name", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("OWOR", "STXOEMPgm", "Brand Program", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
@@ -572,6 +573,8 @@ namespace STXGen2
             AddFieldIfNotExists("WOR1", "STXOPDesLocal", "Operation Description Local", SAPbobsCOM.BoFieldTypes.db_Alpha, 100);
             AddFieldIfNotExists("WOR1", "QCLineID", "QC Operations line ID", SAPbobsCOM.BoFieldTypes.db_Numeric, 10);
 
+            AddFieldIfNotExists("OITM", "Toolitm", "Tool", SAPbobsCOM.BoFieldTypes.db_Alpha, 1, null, null, SAPbobsCOM.BoFldSubTypes.st_Checkbox);
+            AddFieldIfNotExists("OITM", "ToolPitm", "Tool Part", SAPbobsCOM.BoFieldTypes.db_Alpha, 1,null,null, SAPbobsCOM.BoFldSubTypes.st_Checkbox);
 
         }
 
@@ -597,7 +600,46 @@ namespace STXGen2
             }
         }
 
-        private static void AddFieldIfNotExists(string tableName, string fieldName, string fieldDescription, SAPbobsCOM.BoFieldTypes fieldType, int fieldSize,string RTable = null , Dictionary<string, string> validValues = null)
+        private static BoFieldTypes UDFType(string tableName, string fieldName)
+        {
+            SAPbobsCOM.Recordset rs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            try
+            {
+                rs.DoQuery($"SELECT TypeID FROM CUFD WHERE TableID = '{tableName}' AND AliasID = '{fieldName}'");
+                return Utils.MapCUFDTypeToBoFieldTypes(rs.Fields.Item("TypeID").Value.ToString());
+            }
+            finally
+            {
+                if (rs != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(rs);
+                    rs = null;
+                    GC.Collect();
+                }
+            }
+        }
+
+
+        private static int getFieldID(string tableName, string fieldName)
+        {
+            SAPbobsCOM.Recordset rs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            try
+            {
+                rs.DoQuery($"SELECT FieldID FROM CUFD WHERE TableID = '{tableName}' AND AliasID = '{fieldName}'");
+                return (int)rs.Fields.Item("FieldID").Value;
+            }
+            finally
+            {
+                if (rs != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(rs);
+                    rs = null;
+                    GC.Collect();
+                }
+            }
+        }
+
+        private static void AddFieldIfNotExists(string tableName, string fieldName, string fieldDescription, SAPbobsCOM.BoFieldTypes fieldType, int fieldSize, string RTable = null, Dictionary<string, string> validValues = null, BoFldSubTypes? subtype = null)
         {
             if (!UDFExists(tableName, fieldName))
             {
@@ -609,6 +651,11 @@ namespace STXGen2
                     uFieldMDLocal.Name = fieldName;
                     uFieldMDLocal.Description = fieldDescription;
                     uFieldMDLocal.Type = fieldType;
+                    if (subtype.HasValue)
+                    {
+                        uFieldMDLocal.SubType = (SAPbobsCOM.BoFldSubTypes)subtype.Value;
+                    }
+                    
                     uFieldMDLocal.EditSize = fieldSize;
 
                     if (!string.IsNullOrEmpty(RTable))
@@ -646,6 +693,148 @@ namespace STXGen2
                         uFieldMDLocal = null;
                         GC.Collect();
                     }
+                }
+
+            }
+            else
+            {
+                SAPbobsCOM.UserFieldsMD uFieldMDLocal = null;
+                try
+                {
+                    uFieldMDLocal = (SAPbobsCOM.UserFieldsMD)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserFields);
+                    if (UDFType(tableName, fieldName) != fieldType)
+                    {
+                        AddFieldIfNotExists(tableName, $"{fieldName}_Temp", "Temporary Field", fieldType, fieldSize);
+
+                        updateFieldTemp(tableName, fieldName);
+
+                        RemoveUDF(tableName, fieldName);
+
+                        AddFieldIfNotExists(tableName, fieldName, fieldDescription, fieldType, fieldSize);
+
+                        updateFieldOrigin(tableName, fieldName);
+
+                        RemoveUDF(tableName, $"{fieldName}_Temp");
+                    }
+                }
+                finally
+                {
+                    if (uFieldMDLocal != null)
+                    {
+                        System.Runtime.InteropServices.Marshal.ReleaseComObject(uFieldMDLocal);
+                        uFieldMDLocal = null;
+                        GC.Collect();
+                    }
+                }
+            }
+        }
+
+        private static void updateFieldTemp(string tableName, string fieldName)
+        {
+            SAPbobsCOM.Recordset rs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            try
+            {
+                rs.DoQuery($"SELECT TableID,TypeID FROM CUFD WHERE TableID = '{tableName}' AND AliasID = '{fieldName}'");
+                while (!rs.EoF)
+                {
+                    string tableID = rs.Fields.Item("TableID").Value.ToString();
+                    string originFieldName = $"U_{fieldName}";
+                    string tempFieldName = $"U_{fieldName}_Temp";
+                    string updateQuery = $"UPDATE {tableID} SET {tempFieldName} = {originFieldName}";
+
+                    // Execute the update query here
+                    SAPbobsCOM.Recordset updateRs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                    updateRs.DoQuery(updateQuery);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(updateRs);
+                    updateRs = null;
+
+                    rs.MoveNext();
+                }
+
+            }
+            finally
+            {
+                if (rs != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(rs);
+                    rs = null;
+                    GC.Collect();
+                }
+            }
+        }
+
+        private static void updateFieldOrigin(string tableName, string fieldName)
+        {
+            SAPbobsCOM.Recordset rs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+            try
+            {
+                rs.DoQuery($"SELECT TableID,TypeID FROM CUFD WHERE TableID = '{tableName}' AND AliasID = '{fieldName}'");
+                while (!rs.EoF)
+                {
+                    string tableID = rs.Fields.Item("TableID").Value.ToString();
+                    string originFieldName = $"U_{fieldName}";
+                    string tempFieldName = $"U_{fieldName}_Temp";
+                    string updateQuery = $"UPDATE {tableID} SET {originFieldName} = {tempFieldName}";
+
+                    // Execute the update query here
+                    SAPbobsCOM.Recordset updateRs = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
+                    updateRs.DoQuery(updateQuery);
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(updateRs);
+                    updateRs = null;
+
+                    rs.MoveNext();
+                }
+
+            }
+            finally
+            {
+                if (rs != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(rs);
+                    rs = null;
+                    GC.Collect();
+                }
+            }
+        }
+
+        private static void RemoveUDF(string tableName, string fieldName)
+        {
+            SAPbobsCOM.UserFieldsMD userFieldsMD = null;
+            try
+            {
+                // Get the user field's metadata object
+                userFieldsMD = (SAPbobsCOM.UserFieldsMD)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.oUserFields);
+                int fieldid = getFieldID(tableName, fieldName);
+                // Find the field in the specified table
+                if (userFieldsMD.GetByKey(tableName, fieldid))
+                {
+                    // If found, remove it
+                    int removeResult = userFieldsMD.Remove();
+                    if (removeResult != 0)
+                    {
+                        int errCode;
+                        string errMsg;
+                        Utils.oCompany.GetLastError(out errCode, out errMsg);
+                        throw new Exception($"Error removing UDF '{fieldName}' from '{tableName}'. SAP Error: {errCode} - {errMsg}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"UDF '{fieldName}' successfully removed from '{tableName}'.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"UDF '{fieldName}' not found on '{tableName}'. No removal necessary.");
+                }
+            }
+            finally
+            {
+                // Always make sure to release COM objects to free memory
+                if (userFieldsMD != null)
+                {
+                    System.Runtime.InteropServices.Marshal.ReleaseComObject(userFieldsMD);
+                    userFieldsMD = null;
+                    GC.Collect();
                 }
             }
         }

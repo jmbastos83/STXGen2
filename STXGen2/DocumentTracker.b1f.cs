@@ -38,7 +38,6 @@ namespace STXGen2
             this.Button1 = ((SAPbouiCOM.Button)(this.GetItem("2").Specific));
             this.Button2 = ((SAPbouiCOM.Button)(this.GetItem("Item_3").Specific));
             this.Button2.PressedAfter += new SAPbouiCOM._IButtonEvents_PressedAfterEventHandler(this.Button2_PressedAfter);
-            this.EditText0 = ((SAPbouiCOM.EditText)(this.GetItem("Item_0").Specific));
             this.OnCustomInitialize();
 
         }
@@ -57,6 +56,7 @@ namespace STXGen2
 
         private void OnCustomInitialize()
         {
+            Utils.viewDocument = true;
             BindDataTableToMatrix("DocTrackInfo", "mtDTrac", openDocEntry);
 
         }
@@ -194,17 +194,22 @@ namespace STXGen2
             //ERRO
             try
             {
-                SAPbouiCOM.Form parentForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.Item(Utils.ParentFormUID);
-                parentForm.Select();
+                SAPbouiCOM.Form parentForm = Program.SBO_Application.Forms.Item(Utils.ParentFormUID);
+                if (parentForm != null)
+                {
+                    if (!parentForm.UniqueID.Equals(pVal.FormUID))
+                    {
+                        parentForm.Select();
+                    }
+                }
             }
             finally
             {
+                Utils.viewDocument = false;
                 Program.SBO_Application.ActivateMenuItem("1304");
             }
             
 
         }
-
-        private EditText EditText0;
     }
 }

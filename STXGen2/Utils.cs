@@ -11,6 +11,7 @@ namespace STXGen2
         public static SAPbobsCOM.Company oCompany;
 
         public static string ParentFormUID { get; set; }
+        public static bool viewDocument { get; set; }
         public static string decSep { get; private set; }
         public static string thousSep { get; private set; }
         public static int MeasureDec { get; private set; }
@@ -23,7 +24,7 @@ namespace STXGen2
 
         internal static void CompSettings()
         {
-            string sSql = $"select \"DecSep\",\"ThousSep\",\"MeasureDec\",\"PriceDec\",\"SumDec\",\"QtyDec\",\"MainCurncy\",\"SysCurrncy\",\"DirectRate\" from \"OADM\"";
+            string sSql = $"select \"DecSep\",\"ThousSep\",\"MeasureDec\",\"PriceDec\",\"SumDec\",\"QtyDec\",\"MainCurncy\",\"SysCurrncy\",\"DirectRate\",\"DateFormat\" from \"OADM\"";
             Recordset rs = Utils.oCompany.GetBusinessObject(BoObjectTypes.BoRecordset) as Recordset;
             rs.DoQuery(sSql);
             if (!rs.EoF)
@@ -37,6 +38,7 @@ namespace STXGen2
                 MainCurrency = (string)rs.Fields.Item("MainCurncy").Value;
                 SystemCurrency = (string)rs.Fields.Item("SysCurrncy").Value;
                 DirectRate = (string)rs.Fields.Item("DirectRate").Value;
+
             }
         }
 
@@ -44,6 +46,8 @@ namespace STXGen2
         {
             DBStructure.VerifyTables();
             DBStructure.VerifyUDF();
+
+            viewDocument = false;
         }
 
         public static System.Globalization.NumberFormatInfo GetSAPNumberFormatInfo()
@@ -52,6 +56,25 @@ namespace STXGen2
             sapNumberFormat.NumberDecimalSeparator = Utils.decSep;
             sapNumberFormat.NumberGroupSeparator = Utils.thousSep;
             return sapNumberFormat;
+        }
+
+        public static SAPbobsCOM.BoFieldTypes MapCUFDTypeToBoFieldTypes(string cufdType)
+        {
+            switch (cufdType)
+            {
+                case "A": // Alphanumeric
+                    return SAPbobsCOM.BoFieldTypes.db_Alpha;
+                case "M": // Memo
+                    return SAPbobsCOM.BoFieldTypes.db_Memo;
+                case "N": // Numeric
+                    return SAPbobsCOM.BoFieldTypes.db_Numeric;
+                case "D": // Date
+                    return SAPbobsCOM.BoFieldTypes.db_Date;
+                case "B": // Float
+                    return SAPbobsCOM.BoFieldTypes.db_Float;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(cufdType), $"No mapping for CUFD type: {cufdType}");
+            }
         }
 
         public static System.Globalization.CultureInfo GetCompanyCulture()

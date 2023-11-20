@@ -32,7 +32,7 @@ namespace STXGen2
         public static bool operationsUpdate { get; set; } = false;
         public static SAPbouiCOM.DataTable operations { get; set; }
 
-         public static void AddLineToTexturesMatrix(SAPbouiCOM.Form oForm, SAPbouiCOM.Matrix texturesMatrix, int selectedRow)
+         public static void AddLineToTexturesMatrix(SAPbouiCOM.Form oForm, SAPbouiCOM.Matrix texturesMatrix, int SelectedRow)
         {
             oForm.Freeze(true);
 
@@ -50,7 +50,7 @@ namespace STXGen2
             xmlDoc.LoadXml(oDBDataSource.GetAsXML());
             XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
             XmlElement newRow = xmlDoc.CreateElement("row");
-            XmlNode selectedNode = rows.Item(selectedRow);
+            XmlNode selectedNode = rows.Item(SelectedRow);
 
             XmlElement cells = xmlDoc.CreateElement("cells");
             newRow.AppendChild(cells);
@@ -60,14 +60,14 @@ namespace STXGen2
             uidElement.InnerText = "VisOrder";
             newCell.AppendChild(uidElement);
             XmlElement valueElement = xmlDoc.CreateElement("value");
-            valueElement.InnerText = (selectedRow).ToString();
+            valueElement.InnerText = (SelectedRow).ToString();
             newCell.AppendChild(valueElement);
             cells.AppendChild(newCell);
 
 
-            //rows.Item(selectedRow-1).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
-            rows.Item(selectedRow - 1).ParentNode.AppendChild(newRow);
-            for (int i = selectedRow; i < rows.Count; i++)
+            //rows.Item(SelectedRow-1).ParentNode.InsertBefore(newRow, rows.Item(SelectedRow - 1));
+            rows.Item(SelectedRow - 1).ParentNode.AppendChild(newRow);
+            for (int i = SelectedRow; i < rows.Count; i++)
             {
                 XmlNode visOrderNode = rows.Item(i).SelectSingleNode("cells/cell[uid='VisOrder']/value");
                 if (visOrderNode != null)
@@ -87,7 +87,7 @@ namespace STXGen2
         }
 
 
-        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int selectedRow)
+        public static void AddLineToOperationMatrix(SAPbouiCOM.Form oForm, Matrix operationsMatrix, int SelectedRow)
         {
             bool confirmTOper = false;
             oForm.Freeze(true);
@@ -99,7 +99,7 @@ namespace STXGen2
             xmlDoc.LoadXml(oDBDataSource.GetAsXML());
             XmlNodeList rows = xmlDoc.GetElementsByTagName("row");
             XmlElement newRow = xmlDoc.CreateElement("row");
-            XmlNode selectedNode = rows.Item(selectedRow - 1);
+            XmlNode selectedNode = rows.Item(SelectedRow - 1);
 
             XmlNode cellValueNode = selectedNode.SelectSingleNode("cells/cell[uid='U_seq']/value");
             string OP_seq = cellValueNode?.InnerText;
@@ -121,7 +121,7 @@ namespace STXGen2
             uidElement.InnerText = "VisOrder";
             newCell.AppendChild(uidElement);
             XmlElement valueElement = xmlDoc.CreateElement("value");
-            valueElement.InnerText = (selectedRow).ToString();
+            valueElement.InnerText = (SelectedRow).ToString();
             newCell.AppendChild(valueElement);
             cells.AppendChild(newCell);
 
@@ -146,18 +146,18 @@ namespace STXGen2
                 cells.AppendChild(newCell);
             }
 
-            if (selectedRow == rows.Count) // When the last row is selected
+            if (SelectedRow == rows.Count) // When the last row is selected
             {
                 // Append the new row to the end of the list
-                rows.Item(selectedRow-1).ParentNode.AppendChild(newRow);
+                rows.Item(SelectedRow-1).ParentNode.AppendChild(newRow);
             }
             else
             {
                 // Insert the new row before the next row
-                rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
+                rows.Item(SelectedRow).ParentNode.InsertBefore(newRow, rows.Item(SelectedRow - 1));
             }
-            //rows.Item(selectedRow).ParentNode.InsertBefore(newRow, rows.Item(selectedRow - 1));
-            for (int i = selectedRow; i < rows.Count; i++)
+            //rows.Item(SelectedRow).ParentNode.InsertBefore(newRow, rows.Item(SelectedRow - 1));
+            for (int i = SelectedRow; i < rows.Count; i++)
             {
                 XmlNode visOrderNode = rows.Item(i).SelectSingleNode("cells/cell[uid='VisOrder']/value");
                 if (visOrderNode != null)
@@ -235,7 +235,7 @@ namespace STXGen2
                 recordset.MoveNext();
             }
 
-            string query2 = $"select coalesce(\"U_pLength\",\"U_pWidth\") as \"InitialUom\" from \"@STXQC19\" where \"DocEntry\" = '{SAPEvents.qcid}'";
+            string query2 = $"select coalesce(\"U_pLength\",\"U_pWidth\") as \"InitialUom\" from \"@STXQC19\" where \"DocEntry\" = '{SAPEvents.Qcid}'";
             SAPbobsCOM.Recordset recordset2 = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
             recordset2.DoQuery(query2);
             while (!recordset2.EoF)
@@ -399,15 +399,15 @@ namespace STXGen2
             {
                 oForm.Freeze(true);
                 SAPbouiCOM.ComboBox OPFilter = (SAPbouiCOM.ComboBox)oForm.Items.Item("OPFilter").Specific;
-                if (SAPEvents.selectedRow > 0)
+                if (SAPEvents.SelectedRow > 0)
                 {
                     SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19O");
 
                     // Remove the row from the data source
-                    oDBDataSource.RemoveRecord(SAPEvents.selectedRow - 1);
+                    oDBDataSource.RemoveRecord(SAPEvents.SelectedRow - 1);
 
                     // Update the # aka LineID column
-                    for (int i = SAPEvents.selectedRow - 1; i < oDBDataSource.Size; i++)
+                    for (int i = SAPEvents.SelectedRow - 1; i < oDBDataSource.Size; i++)
                     {
                         oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
                     }
@@ -438,15 +438,15 @@ namespace STXGen2
             try
             {
                 oForm.Freeze(true);
-                if (SAPEvents.selectedRow > 0)
+                if (SAPEvents.SelectedRow > 0)
                 {
                     SAPbouiCOM.DBDataSource oDBDataSource = (SAPbouiCOM.DBDataSource)oForm.DataSources.DBDataSources.Item("@STXQC19T");
 
                     // Remove the row from the data source
-                    oDBDataSource.RemoveRecord(SAPEvents.selectedRow - 1);
+                    oDBDataSource.RemoveRecord(SAPEvents.SelectedRow - 1);
 
                     // Update the # aka LineID column
-                    for (int i = SAPEvents.selectedRow - 1; i < oDBDataSource.Size; i++)
+                    for (int i = SAPEvents.SelectedRow - 1; i < oDBDataSource.Size; i++)
                     {
                         oDBDataSource.SetValue("VisOrder", i, (i + 1).ToString());
                     }
@@ -585,7 +585,7 @@ namespace STXGen2
             return string.Join(",", textureCodes);
         }
 
-        internal static void GetDefOperations(IForm uIAPIRawForm, int selectedRow)
+        internal static void GetDefOperations(IForm uIAPIRawForm, int SelectedRow)
         {
             processOperationsListErr = 0;
 
@@ -595,10 +595,10 @@ namespace STXGen2
             List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
 
             processOperationsList(uIAPIRawForm, matrix1Values);
-            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, selectedRow);
+            processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, SelectedRow);
         }
 
-        internal static void GetOperations(IForm uIAPIRawForm, int selectedRow)
+        internal static void GetOperations(IForm uIAPIRawForm, int SelectedRow)
         {
             processOperationsListErr = 0;
 
@@ -612,7 +612,7 @@ namespace STXGen2
             switch (processOperationsListErr)
             {
                 case 0:
-                    processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, selectedRow);
+                    processMTOperationsList(uIAPIRawForm, mOperations, matrix1Values, SelectedRow);
                     break;
                 case 1:
                     Program.SBO_Application.SetStatusBarMessage("Selection of SPT missing.", BoMessageTime.bmt_Medium, false);

@@ -24,7 +24,7 @@ namespace STXGen2
     {
         private const int FixedMatrixHeight = 110;
         bool loadingForm = true;
-        private int selectedRow = SAPEvents.selectedRow;
+        private int SelectedRow = SAPEvents.SelectedRow;
         public static string selectedUOM { get; set; } = "";
         public static string oldLengthValue { get; set; } = "";
         public static string oldWidthValue { get; set; } = "";
@@ -306,7 +306,8 @@ namespace STXGen2
             this.DefBOM.PressedAfter += new SAPbouiCOM._ICheckBoxEvents_PressedAfterEventHandler(this.DefBOM_PressedAfter);
             this.OPFilter = ((SAPbouiCOM.ComboBox)(this.GetItem("OPFilter").Specific));
             this.OPFilter.ComboSelectAfter += new SAPbouiCOM._IComboBoxEvents_ComboSelectAfterEventHandler(this.OPFilter_ComboSelectAfter);
-            this.LinkedButton2 = ((SAPbouiCOM.LinkedButton)(this.GetItem("Item_21").Specific));
+            this.LinkedButton2 = ((SAPbouiCOM.LinkedButton)(this.GetItem("lbWO").Specific));
+            this.LinkedButton2.ClickBefore += new SAPbouiCOM._ILinkedButtonEvents_ClickBeforeEventHandler(this.LinkedButton2_ClickBefore);
             this.StaticText19 = ((SAPbouiCOM.StaticText)(this.GetItem("lWOrder").Specific));
             this.EditText16 = ((SAPbouiCOM.EditText)(this.GetItem("Item_27").Specific));
             this.BaseLine = ((SAPbouiCOM.EditText)(this.GetItem("BaseLine").Specific));
@@ -405,7 +406,7 @@ namespace STXGen2
 
         private void DisableFormWO()
         {
-            if (!string.IsNullOrEmpty(EditText1.Value))
+            if (!string.IsNullOrEmpty(EditText1.Value) && EditText1.Value != "0")
             {
                 this.mTextures.Item.Enabled = false;
                 this.mOperations.Item.Enabled = false;
@@ -573,11 +574,11 @@ namespace STXGen2
                         SAPbouiCOM.Matrix mtxTextures = (SAPbouiCOM.Matrix)this.UIAPIRawForm.Items.Item("mTextures").Specific;
 
                         isChooseFromListTriggered = true;
-                        mtxTextures.SetCellWithoutValidation(SAPEvents.selectedRow, "QCQuantity", "1");
-                        mtxTextures.SetCellWithoutValidation(SAPEvents.selectedRow, "QCCovA", QCArea.Value);
-                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(SAPEvents.selectedRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
-                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(SAPEvents.selectedRow).Specific).Select("2", BoSearchKey.psk_ByValue);
-                        ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(SAPEvents.selectedRow).Specific).Value = TextureCode;
+                        mtxTextures.SetCellWithoutValidation(SAPEvents.SelectedRow, "QCQuantity", "1");
+                        mtxTextures.SetCellWithoutValidation(SAPEvents.SelectedRow, "QCCovA", QCArea.Value);
+                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCTClass").Cells.Item(SAPEvents.SelectedRow).Specific).Select(TClass, BoSearchKey.psk_ByValue);
+                        ((SAPbouiCOM.ComboBox)mtxTextures.Columns.Item("QCGComp").Cells.Item(SAPEvents.SelectedRow).Specific).Select("2", BoSearchKey.psk_ByValue);
+                        ((SAPbouiCOM.EditText)mtxTextures.Columns.Item("QCTexture").Cells.Item(SAPEvents.SelectedRow).Specific).Value = TextureCode;
                     }
                 }
 
@@ -948,13 +949,13 @@ namespace STXGen2
 
 
 
-        private void btnGetOP_PressedBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
-        {
-            BubbleEvent = true;
-            Matrix matrix1 = (Matrix)this.UIAPIRawForm.Items.Item("mTextures").Specific;
-            List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
+        //private void btnGetOP_PressedBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        //{
+        //    BubbleEvent = true;
+        //    Matrix matrix1 = (Matrix)this.UIAPIRawForm.Items.Item("mTextures").Specific;
+        //    List<Dictionary<string, string>> matrix1Values = QCEvents.GetAllValuesFromMatrix1(matrix1);
 
-        }
+        //}
 
         private void QCPartType_ChooseFromListBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
         {
@@ -1087,7 +1088,7 @@ namespace STXGen2
                             }
 
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                            QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     }
@@ -1098,7 +1099,7 @@ namespace STXGen2
                             DefBOM.Checked = false;
                         }
                         this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                        QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                         QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                     }
                     break;
@@ -1139,7 +1140,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                            QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     }
@@ -1150,7 +1151,7 @@ namespace STXGen2
                             DefBOM.Checked = false;
                         }
                         this.mOperations.Clear();
-                        QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                        QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                         QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                     }
                     break;
@@ -1177,7 +1178,7 @@ namespace STXGen2
                                 }
 
                                 this.mOperations.Clear();
-                                QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                                QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                                 QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             }
                         }
@@ -1188,7 +1189,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                            QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                         break;
@@ -1230,7 +1231,7 @@ namespace STXGen2
                                     DefBOM.Checked = false;
                                 }
                                 this.mOperations.Clear();
-                                QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                                QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                                 QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             }
                         }
@@ -1241,7 +1242,7 @@ namespace STXGen2
                                 DefBOM.Checked = false;
                             }
                             this.mOperations.Clear();
-                            QCEvents.GetOperations(this.UIAPIRawForm, selectedRow);
+                            QCEvents.GetOperations(this.UIAPIRawForm, SelectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                             
                         }
@@ -1261,20 +1262,20 @@ namespace STXGen2
 
         private void mOperations_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
-            SAPEvents.lastClickedMatrixUID = pVal.ItemUID;
+            SAPEvents.LastClickedMatrixUID = pVal.ItemUID;
 
         }
 
         private void mOCosts_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
-            SAPEvents.lastClickedMatrixUID = pVal.ItemUID;
+            SAPEvents.LastClickedMatrixUID = pVal.ItemUID;
 
         }
 
         private void mTextures_ClickAfter(object sboObject, SBOItemEventArg pVal)
         {
-            SAPEvents.lastClickedMatrixUID = pVal.ItemUID;
-            SAPEvents.selectedRow = pVal.Row;
+            SAPEvents.LastClickedMatrixUID = pVal.ItemUID;
+            SAPEvents.SelectedRow = pVal.Row;
 
         }
 
@@ -1617,7 +1618,7 @@ namespace STXGen2
                         if (confirmDefBom)
                         {
                             this.mOperations.Clear();
-                            QCEvents.GetDefOperations(this.UIAPIRawForm,selectedRow);
+                            QCEvents.GetDefOperations(this.UIAPIRawForm,SelectedRow);
                             QCEvents.OperationsCalcTotal(this.UIAPIRawForm);
                         }
                     //}
@@ -1947,6 +1948,26 @@ namespace STXGen2
                 this.QCHeight.Value = $"{formattedQCHeight} {selectedUOM}";
                 QCEvents.CalculateArea(this.UIAPIRawForm.UniqueID, selectedUOM);
                 lostFocusQCHeight = true;
+            }
+
+        }
+
+        private void LinkedButton2_ClickBefore(object sboObject, SBOItemEventArg pVal, out bool BubbleEvent)
+        {
+            BubbleEvent = true;
+            try
+            {
+                string woNumValue = ((SAPbouiCOM.EditText)this.UIAPIRawForm.Items.Item("QCWOrder").Specific).Value;
+                string docentryWO = DBCalls.getWODocEntry(woNumValue);
+
+                // Cancel the default linked button behavior
+                BubbleEvent = false;
+
+                Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_ProductionOrder, "", docentryWO);
+            }
+            catch (Exception ex)
+            {
+                Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
             }
 
         }

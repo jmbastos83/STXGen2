@@ -44,20 +44,23 @@ namespace STXGen2
         /// </summary>
         public override void OnInitializeFormEvents()
         {
+            this.UnloadAfter += new UnloadAfterHandler(this.Form_UnloadAfter);
+
         }
 
 
 
         private void OnCustomInitialize()
         {
-            //SAPbouiCOM.DataTable dt = Grid0.DataTable ?? this.UIAPIRawForm.DataSources.DataTables.Add("DT_0");
+            Utils.viewDocument = true;
 
             SAPbobsCOM.Recordset oRecordSet = (SAPbobsCOM.Recordset)Utils.oCompany.GetBusinessObject(SAPbobsCOM.BoObjectTypes.BoRecordset);
 
             string query = $"With SOInfo as(\n" +
 
                             "Select 20 as \"FlowOrder\",'Sales Order' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T1.\"DocEntry\",T0.\"ObjType\",T1.\"LineNum\",T1.\"BaseEntry\",T1.\"BaseLine\", T1.\"BaseType\"\n" +
+                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"DocEntry\",T0.\"ObjType\",T1.\"LineNum\",T1.\"BaseEntry\",T1.\"BaseLine\", T1.\"BaseType\",\n" +
+                            "Case When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'Y' then 'Canceled' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'N' then 'Closed' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'C' then 'Cancellation'when T0.\"DocStatus\" = 'O' then 'Open' end as \"Status\"\n" +
                             "from ORDR T0\n" +
                             "inner join RDR1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
                             "inner join OUSR T2 on coalesce(T0.\"UserSign2\",T0.\"UserSign\") = T2.\"USERID\"\n" +
@@ -66,7 +69,8 @@ namespace STXGen2
                             "QUOTEInfo as (\n" +
 
                             "Select 1 as \"FlowOrder\",'Sales Quotation' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\"\n" +
+                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\",T0.\"DocEntry\",\n" +
+                            "Case When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'Y' then 'Canceled' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'N' then 'Closed' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'C' then 'Cancellation'when T0.\"DocStatus\" = 'O' then 'Open' end as \"Status\"\n" +
                             "from OQUT T0\n" +
                             "inner join QUT1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
                             "inner join OUSR T2 on coalesce(T0.\"UserSign2\",T0.\"UserSign\") = T2.\"USERID\"\n" +
@@ -76,7 +80,8 @@ namespace STXGen2
                             "DELIVERYInfo as (\n" +
 
                             "Select 30 as \"FlowOrder\",'Delivery Note' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\"\n" +
+                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\",T0.\"DocEntry\",\n" +
+                            "Case When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'Y' then 'Canceled' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'N' then 'Closed' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'C' then 'Cancellation'when T0.\"DocStatus\" = 'O' then 'Open' end as \"Status\"\n" +
                             "from ODLN T0\n" +
                             "inner join DLN1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
                             "inner join OUSR T2 on coalesce(T0.\"UserSign2\",T0.\"UserSign\") = T2.\"USERID\"\n" +
@@ -86,7 +91,8 @@ namespace STXGen2
                             "WOInfo as (\n" +
 
                             "select 25 as \"FlowOrder\",'Production Order' as \"DocType\",T3.U_ToolNum,T3.\"U_PartNum\",T2.\"CardCode\",T2.\"U_STXCustName\" AS \"CardName\",T2.\"ItemCode\", T2.\"DocNum\",\n" +
-                            "T2.\"PostDate\" AS \"DocDate\", T2.\"DueDate\" AS \"DocDueDate\",T2.\"U_STXSOLineNum\" as \"VisOrder\",T4.\"U_NAME\" as \"Updated By\",T2.\"ObjType\"\n" +
+                            "T2.\"PostDate\" AS \"DocDate\", T2.\"DueDate\" AS \"DocDueDate\",T2.\"U_STXSOLineNum\" as \"VisOrder\",T4.\"U_NAME\" as \"Updated By\",T2.\"ObjType\",T2.\"DocEntry\",\n" +
+                            "Case When T2.\"Status\" = 'C' then 'Canceled' When T2.\"Status\" = 'P' then 'Planned' When T2.\"Status\" = 'R' then 'Released' when T2.\"Status\" = 'L' then 'Closed' end as \"Status\"\n" +
                             "from ORDR T0\n" +
                             "inner join RDR1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
                             "inner join OWOR T2 on T0.\"DocNum\" = T2.\"U_STXSONum\" and T1.\"LineNum\" = T2.\"U_STXSOLineNum\"\n" +
@@ -97,7 +103,8 @@ namespace STXGen2
                             "INVOICEInfo as (\n" +
 
                             "Select 40 as \"FlowOrder\",'A/R Invoice' as \"DocType\",T1.\"U_STXToolNum\",T1.\"U_STXPartNum\",T0.\"CardCode\",T0.\"CardName\",T1.\"ItemCode\",T0.\"DocNum\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\"\n" +
+                            "T0.\"DocDueDate\",T1.\"VisOrder\",T2.\"U_NAME\" as \"Updated By\",T0.\"ObjType\",T0.\"DocEntry\",\n" +
+                            "Case When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'Y' then 'Canceled' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'N' then 'Closed' When T0.\"DocStatus\" = 'C' and T0.\"CANCELED\" = 'C' then 'Cancellation'when T0.\"DocStatus\" = 'O' then 'Open' end as \"Status\"\n" +
                             "from OINV T0\n" +
                             "inner join INV1 T1 on T0.\"DocEntry\" = T1.\"DocEntry\"\n" +
                             "inner join OUSR T2 on coalesce(T0.\"UserSign2\",T0.\"UserSign\") = T2.\"USERID\"\n" +
@@ -106,20 +113,20 @@ namespace STXGen2
                             "left join SOInfo T5 on T1.\"BaseEntry\" = T5.\"DocEntry\" and T1.\"BaseLine\" = T5.\"LineNum\" and T1.\"BaseType\" = T5.\"ObjType\"\n" +
                             "where coalesce(T4.\"DocEntry\",T5.\"DocEntry\") = {0})\n" +
 
-                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from QUOTEInfo T0\n" +
+                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"Status\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\",T0.\"DocEntry\" from QUOTEInfo T0\n" +
                             "union all\n" +
-                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from SOInfo T0\n" +
+                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"Status\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\",T0.\"DocEntry\" from SOInfo T0\n" +
                             "union all\n" +
-                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from DELIVERYInfo T0\n" +
+                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"Status\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\",T0.\"DocEntry\" from DELIVERYInfo T0\n" +
                             "union all\n" +
-                            "select coalesce(T0.\"U_ToolNum\",'') as \"Tool Num.\",T0.\"U_PartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from WOInfo T0\n" +
+                            "select coalesce(T0.\"U_ToolNum\",'') as \"Tool Num.\",T0.\"U_PartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"Status\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\",T0.\"DocEntry\" from WOInfo T0\n" +
                             "union all\n" +
-                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
-                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\" from INVOICEInfo T0\n" +
+                            "select coalesce(T0.\"U_STXToolNum\",'') as \"Tool Num.\",T0.\"U_STXPartNum\" as \"Part Num\",T0.\"FlowOrder\",T0.\"DocType\" as \"Doc. Type\",T0.\"Status\",T0.\"DocNum\" as \"Doc. Number\",T0.\"VisOrder\" as \"Doc. Line\",T0.\"CardCode\",T0.\"CardName\",T0.\"ItemCode\",T0.\"DocDate\",\n" +
+                            "T0.\"DocDueDate\",T0.\"Updated By\",T0.\"ObjType\",T0.\"DocEntry\" from INVOICEInfo T0\n" +
 
                             "order by coalesce(T0.\"U_STXToolNum\",''),T0.\"FlowOrder\",T0.\"U_STXPartNum\",T0.\"DocNum\",T0.\"VisOrder\",T0.\"CardCode\",T0.\"CardName\"";
 
@@ -133,6 +140,10 @@ namespace STXGen2
                 column.Editable = false;
                 // Example: if you want to hide a specific column
                 if (column.UniqueID == "FlowOrder")
+                {
+                    column.Visible = false;
+                }
+                if (column.UniqueID == "DocEntry")
                 {
                     column.Visible = false;
                 }
@@ -164,5 +175,11 @@ namespace STXGen2
         }
 
         private Button Button2;
+
+        private void Form_UnloadAfter(SBOItemEventArg pVal)
+        {
+            Utils.viewDocument = false;
+
+        }
     }
 }

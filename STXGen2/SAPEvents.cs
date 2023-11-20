@@ -19,15 +19,16 @@ namespace STXGen2
         private static bool docCancelation = false;
         private static string cancelDocEntry;
         public static bool manualQCIDCreation;
+        private static bool deleteGRPORow = false;
 
-        public static string itemCode { get; private set; }
-        public static string itemName { get; private set; }
-        public static string mLinenum { get; private set; }
-        public static string qcid { get; private set; }
-        public static string lastClickedMatrixUID { get; set; }
-        public static int selectedRow { get; set; }
+        public static string ItemCode { get; private set; }
+        public static string ItemName { get; private set; }
+        public static string MLinenum { get; private set; }
+        public static string Qcid { get; private set; }
+        public static string LastClickedMatrixUID { get; set; }
+        public static int SelectedRow { get; set; }
         public static int SysFormLine { get; private set; }
-        public static bool cancelSAPOperation { get; private set; }
+        public static bool CancelSAPOperation { get; private set; }
 
         internal static void SBO_Application_RightClickEvent(ref ContextMenuInfo eventInfo, out bool BubbleEvent)
         {
@@ -38,9 +39,11 @@ namespace STXGen2
 
                 SAPbouiCOM.MenuItem oMenuItem = null;
                 SAPbouiCOM.Menus oMenus = null;
+
+
                 if ((oForm.TypeEx == "149" || oForm.TypeEx == "139" || oForm.TypeEx == "140" || oForm.TypeEx == "133" || oForm.TypeEx == "179") && eventInfo.BeforeAction == true && eventInfo.ItemUID == "38")
                 {
-                    selectedRow = eventInfo.Row;
+                    SelectedRow = eventInfo.Row;
                     if (oForm.Mode == BoFormMode.fm_UPDATE_MODE || oForm.Mode == BoFormMode.fm_OK_MODE)
                     {
                         try
@@ -84,10 +87,15 @@ namespace STXGen2
                     }
                 }
 
+                if ((oForm.TypeEx == "721") && eventInfo.BeforeAction == true && eventInfo.ItemUID == "13" && eventInfo.EventType == BoEventTypes.et_RIGHT_CLICK)
+                {
+                    SelectedRow = eventInfo.Row;
+                }
+
                 if (eventInfo.FormUID == oForm.UniqueID && eventInfo.ItemUID == "mTextures" && eventInfo.EventType == BoEventTypes.et_RIGHT_CLICK && eventInfo.BeforeAction)
                 {
                     BubbleEvent = false;
-                    selectedRow = eventInfo.Row;
+                    SelectedRow = eventInfo.Row;
                     oForm.EnableMenu("1292", true);
                     oForm.EnableMenu("1293", eventInfo.Row > 0);
                 }
@@ -95,7 +103,7 @@ namespace STXGen2
                 if (eventInfo.FormUID == oForm.UniqueID && eventInfo.ItemUID == "mOper" && eventInfo.EventType == BoEventTypes.et_RIGHT_CLICK && eventInfo.BeforeAction)
                 {
                     BubbleEvent = false;
-                    selectedRow = eventInfo.Row;
+                    SelectedRow = eventInfo.Row;
                     oForm.EnableMenu("772", true);
                     oForm.EnableMenu("784", true);
                     oForm.EnableMenu("1292", true);
@@ -115,39 +123,47 @@ namespace STXGen2
 
             BubbleEvent = true;
 
-            if (FormUID == "RelationMap" && pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "Gresult" && pVal.BeforeAction)
+            if (FormUID == "RelationMap")
             {
-                SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
-                SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("Gresult").Specific;
-
-                int rowIndex = oGrid.GetDataTableRowIndex(pVal.Row); // Get the Index on the datatable of the row selected on the grid
-
-                if (rowIndex >= 0 && oGrid.Rows.Count > rowIndex)
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "Gresult" && pVal.ColUID == "Doc. Number" && pVal.BeforeAction)
                 {
-                    try
-                    {
-                        string objtType = oGrid.DataTable.GetValue("ObjType", rowIndex).ToString();  // The value in the "ObjType" column of the clicked row
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Grid oGrid = (SAPbouiCOM.Grid)oForm.Items.Item("Gresult").Specific;
 
-                        SAPbouiCOM.EditTextColumn docNumColumn = (SAPbouiCOM.EditTextColumn)oGrid.Columns.Item("Doc. Number");
-                        docNumColumn.LinkedObjectType = objtType;  // Change LinkedObjectType based on the value in the "ObjType" column
+                    int rowIndex = oGrid.GetDataTableRowIndex(pVal.Row);
 
-                    }
-                    catch (Exception ex)
+                    if (rowIndex >= 0 && oGrid.Rows.Count > rowIndex)
                     {
-                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                        try
+                        {
+                            string objtType = oGrid.DataTable.GetValue("ObjType", rowIndex).ToString();
+                            string oDocentry = oGrid.DataTable.GetValue("DocEntry", rowIndex).ToString();
+                            string oDocLine = oGrid.DataTable.GetValue("Doc. Line", rowIndex).ToString();
+                            SAPbouiCOM.EditTextColumn docNumColumn = (SAPbouiCOM.EditTextColumn)oGrid.Columns.Item("Doc. Number");
+                            docNumColumn.LinkedObjectType = objtType;
+                            BubbleEvent = false;
+
+                            Program.SBO_Application.OpenForm((SAPbouiCOM.BoFormObjectEnum)Enum.Parse(typeof(SAPbouiCOM.BoFormObjectEnum), objtType), "", oDocentry);
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                        }
                     }
                 }
             }
+
 
             if (pVal.FormType == 0 && pVal.EventType == SAPbouiCOM.BoEventTypes.et_ITEM_PRESSED && pVal.BeforeAction)
             {
                 if (pVal.ItemUID == "1")
                 {
-                    cancelSAPOperation = false;
+                    CancelSAPOperation = false;
                 }
                 if (pVal.ItemUID == "2")
                 {
-                    cancelSAPOperation = true;
+                    CancelSAPOperation = true;
                 }
 
             }
@@ -158,25 +174,79 @@ namespace STXGen2
             }
 
 
-            if (FormUID == "DocTracker" && pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "mtDTrac" && pVal.ColUID == "WONum" && pVal.BeforeAction)
+            if (FormUID == "DocTracker")
             {
-                SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
-                SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)oForm.Items.Item("mtDTrac").Specific;
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "mtDTrac" && pVal.ColUID == "WONum" && pVal.BeforeAction)
+                {
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)oForm.Items.Item("mtDTrac").Specific;
 
 
+                    try
+                    {
+                        string woNumValue = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("WONum").Cells.Item(pVal.Row).Specific).Value;
+                        string docentryWO = DBCalls.getWODocEntry(woNumValue);
+
+                        // Cancel the default linked button behavior
+                        BubbleEvent = false;
+
+                        Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_ProductionOrder, "", docentryWO);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+
+                if (pVal.EventType == SAPbouiCOM.BoEventTypes.et_MATRIX_LINK_PRESSED && pVal.ItemUID == "mtDTrac" && pVal.ColUID == "SONum" && pVal.BeforeAction)
+                {
+                    SAPbouiCOM.Form oForm = Program.SBO_Application.Forms.Item(FormUID);
+                    SAPbouiCOM.Matrix oMatrix = (SAPbouiCOM.Matrix)oForm.Items.Item("mtDTrac").Specific;
+
+                    try
+                    {
+                        string soNum = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("SONum").Cells.Item(pVal.Row).Specific).Value;
+                        string docentrySO = DBCalls.getSODocEntry(soNum);
+
+                        // Cancel the default linked button behavior
+                        BubbleEvent = false;
+
+                        Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_Order, "", docentrySO);
+                    }
+                    catch (Exception ex)
+                    {
+                        Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+                    }
+                }
+            }
+
+            if (pVal.FormTypeEx == "139" && (pVal.FormMode == (int)BoFormMode.fm_FIND_MODE || pVal.FormMode == (int)BoFormMode.fm_ADD_MODE) && !pVal.BeforeAction && pVal.EventType == BoEventTypes.et_FORM_DRAW)
+            {
+                SAPbouiCOM.Form activeForm = Program.SBO_Application.Forms.Item(FormUID);
+
+                activeForm.Freeze(true);
                 try
                 {
-                    string woNumValue = ((SAPbouiCOM.EditText)oMatrix.Columns.Item("WONum").Cells.Item(pVal.Row).Specific).Value;
-                    string docentryWO = DBCalls.getWODocEntry(woNumValue);
+                    SAPbouiCOM.Item itemRelmap = activeForm.Items.Item("RelMap");
+                    if (itemRelmap?.Specific is SAPbouiCOM.Button relMap)
+                    {
+                        relMap.Item.Enabled = false;
+                    }
 
-                    // Cancel the default linked button behavior
-                    BubbleEvent = false;
+                    SAPbouiCOM.Item itemTracker = activeForm.Items.Item("DocTrak");
+                    if (itemTracker?.Specific is SAPbouiCOM.Button docTrack)
+                    {
+                        docTrack.Item.Enabled = false;
+                    }
 
-                    Program.SBO_Application.OpenForm(SAPbouiCOM.BoFormObjectEnum.fo_ProductionOrder, "", docentryWO);
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    Program.SBO_Application.SetStatusBarMessage("Error: " + ex.Message, SAPbouiCOM.BoMessageTime.bmt_Short, true);
+
+                }
+                finally
+                {
+                    activeForm.Freeze(false);
                 }
             }
 
@@ -273,57 +343,32 @@ namespace STXGen2
         {
             BubbleEvent = true;
 
+            Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
+
             if (isEventBeingProcessed)
             {
                 return;
             }
 
-            Form activeForm = SAPbouiCOM.Framework.Application.SBO_Application.Forms.ActiveForm;
-
-            if (activeForm.TypeEx == "139" && (activeForm.Mode == BoFormMode.fm_FIND_MODE || activeForm.Mode == BoFormMode.fm_ADD_MODE))
-            {
-
-                activeForm.Freeze(true);
-                SAPbouiCOM.Item itemRelmap = activeForm.Items.Item("RelMap");
-                if (itemRelmap != null)
-                {
-                    SAPbouiCOM.Button relMap = itemRelmap.Specific as SAPbouiCOM.Button;
-                    if (relMap != null)
-                    {
-                        relMap.Item.Enabled = false;
-                    }
-                }
-
-                SAPbouiCOM.Item itemTracker = activeForm.Items.Item("DocTrak");
-                if (itemTracker != null)
-                {
-                    SAPbouiCOM.Button docTrack = itemTracker.Specific as SAPbouiCOM.Button;
-                    if (docTrack != null)
-                    {
-                        docTrack.Item.Enabled = false;
-                    }
-                }
-                activeForm.Freeze(false);
-            }
 
             if ((activeForm.TypeEx == "149" || activeForm.TypeEx == "139" || activeForm.TypeEx == "140" || activeForm.TypeEx == "133" || activeForm.TypeEx == "179") && pVal.BeforeAction && pVal.MenuUID == "QCalc")
             {
                 Matrix itemMatrix = (Matrix)activeForm.Items.Item("38").Specific;
-                
 
-                if (selectedRow > -1)
+
+                if (SelectedRow > -1)
                 {
-                    SysFormLine = selectedRow;
-                    SAPbouiCOM.EditText etItemCode = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("1").Cells.Item(selectedRow).Specific;
-                    itemCode = etItemCode.Value;
-                    SAPbouiCOM.EditText etDescription = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("3").Cells.Item(selectedRow).Specific;
-                    itemName = etDescription.Value;
-                    SAPbouiCOM.EditText etLineNum = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("110").Cells.Item(selectedRow).Specific;
-                    mLinenum = etLineNum.Value;
-                    SAPbouiCOM.EditText etQCID = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("U_STXQC19ID").Cells.Item(selectedRow).Specific;
-                    qcid = etQCID.Value;
+                    SysFormLine = SelectedRow;
+                    SAPbouiCOM.EditText etItemCode = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("1").Cells.Item(SelectedRow).Specific;
+                    ItemCode = etItemCode.Value;
+                    SAPbouiCOM.EditText etDescription = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("3").Cells.Item(SelectedRow).Specific;
+                    ItemName = etDescription.Value;
+                    SAPbouiCOM.EditText etLineNum = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("110").Cells.Item(SelectedRow).Specific;
+                    MLinenum = etLineNum.Value;
+                    SAPbouiCOM.EditText etQCID = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("U_STXQC19ID").Cells.Item(SelectedRow).Specific;
+                    Qcid = etQCID.Value;
 
-                    SAPbouiCOM.EditText UnPrice = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("14").Cells.Item(selectedRow).Specific;
+                    SAPbouiCOM.EditText UnPrice = (SAPbouiCOM.EditText)itemMatrix.Columns.Item("14").Cells.Item(SelectedRow).Specific;
                     string unPrice = UnPrice.Value;
 
                     string docCur = "";
@@ -349,7 +394,7 @@ namespace STXGen2
                     try
                     {
                         activeForm.Freeze(true);
-                        if (string.IsNullOrEmpty(qcid) || qcid == "0")
+                        if (string.IsNullOrEmpty(Qcid) || Qcid == "0")
                         {
                             frmQCalc = new QuoteCalculator();
                             Utils.ParentFormUID = activeForm.UniqueID;
@@ -361,26 +406,26 @@ namespace STXGen2
                             string DocEntry = oDBDS.GetValue("DocEntry", 0);
                             string ObjType = oDBDS.GetValue("ObjType", 0);
 
-                            qcid = frmQCalc.AddUDO(DocEntry, ObjType, mLinenum);
+                            Qcid = frmQCalc.AddUDO(DocEntry, ObjType, MLinenum);
                             //nQCalc.UpdateUDO(qcid, DocEntry, ObjType, mLinenum);
 
                             SAPbouiCOM.Matrix mDocLines = ((SAPbouiCOM.Matrix)(activeForm.Items.Item("38").Specific));
                             mDocLines.Columns.Item("U_STXQC19ID").Editable = true;
-                            etQCID.Value = qcid;
+                            etQCID.Value = Qcid;
 
                             manualQCIDCreation = true;
                             activeForm.Items.Item("1").Click();
                             manualQCIDCreation = false;
-                            if (!cancelSAPOperation)
+                            if (!CancelSAPOperation)
                             {
                                 mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
-                                frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
+                                frmQCalc.LoadFrmByKey(Qcid, ItemCode, ItemName, docCur, unPrice, exRate, DocEntry, ObjType, MLinenum);
                             }
                             else
                             {
                                 //DBCalls.revertQCIDCreation(qcid);
                                 //etQCID.Value = string.Empty;
-                                ((SAPbouiCOM.EditText)mDocLines.Columns.Item("1").Cells.Item(selectedRow).Specific).Active = true;
+                                ((SAPbouiCOM.EditText)mDocLines.Columns.Item("1").Cells.Item(SelectedRow).Specific).Active = true;
                                 mDocLines.Columns.Item("U_STXQC19ID").Editable = false;
                             }
                         }
@@ -400,7 +445,7 @@ namespace STXGen2
                             {
                                 activeForm.Items.Item("1").Click();
                             }
-                            frmQCalc.LoadFrmByKey(qcid, itemCode, itemName, docCur, unPrice, exRate, DocEntry, ObjType, mLinenum);
+                            frmQCalc.LoadFrmByKey(Qcid, ItemCode, ItemName, docCur, unPrice, exRate, DocEntry, ObjType, MLinenum);
                         }
                     }
                     catch (Exception ex)
@@ -411,7 +456,7 @@ namespace STXGen2
                     {
                         activeForm.Freeze(false);
                     }
-                    
+
 
                 }
                 else
@@ -425,9 +470,9 @@ namespace STXGen2
                 // Handle events for the add-on form
                 if ((pVal.MenuUID == "1292" || pVal.MenuUID == "1293") && !pVal.BeforeAction)
                 {
-                    if (!string.IsNullOrEmpty(lastClickedMatrixUID))
+                    if (!string.IsNullOrEmpty(LastClickedMatrixUID))
                     {
-                        SAPbouiCOM.Matrix activeMatrix = (SAPbouiCOM.Matrix)activeForm.Items.Item(lastClickedMatrixUID).Specific;
+                        SAPbouiCOM.Matrix activeMatrix = (SAPbouiCOM.Matrix)activeForm.Items.Item(LastClickedMatrixUID).Specific;
                         HandleQCMatrixMenuEvent(Program.SBO_Application, ref pVal, activeMatrix);
                         return;
                     }
@@ -437,9 +482,10 @@ namespace STXGen2
                     }
                 }
             }
+
             if (activeForm.TypeEx == "139" && pVal.BeforeAction && pVal.MenuUID == "1293")
             {
-                bool canDelete = DBCalls.VerifyWOCreated(activeForm, selectedRow);
+                bool canDelete = DBCalls.VerifyWOCreated(activeForm, SelectedRow);
                 if (!canDelete)
                 {
                     BubbleEvent = false;
@@ -459,7 +505,22 @@ namespace STXGen2
                     DBCalls.QCIDUpdateWOinfo(activeForm, cancelDocEntry);
                     docCancelation = false;
                 }
-               
+
+            }
+
+            if (activeForm.TypeEx == "721" && pVal.BeforeAction && pVal.MenuUID == "1293")
+            {
+                deleteGRPORow = true;
+            }
+
+            if (activeForm.TypeEx == "721" && !pVal.BeforeAction && pVal.MenuUID == "1293")
+            {
+                if (deleteGRPORow)
+                {
+                    Goods_Receipt.TrigrDeleteRow = true;
+                    Goods_Receipt.UpdateitmsCboxes(activeForm, SelectedRow);
+                    deleteGRPORow = false;
+                }
             }
         }
 
@@ -471,27 +532,27 @@ namespace STXGen2
                 if (pVal.MenuUID == "1292" && !pVal.BeforeAction)
                 {
                     oForm.Freeze(true);
-                    if (SAPEvents.lastClickedMatrixUID == "mTextures")
+                    if (SAPEvents.LastClickedMatrixUID == "mTextures")
                     {
-                        QCEvents.AddLineToTexturesMatrix(oForm, activeMatrix, selectedRow);
+                        QCEvents.AddLineToTexturesMatrix(oForm, activeMatrix, SelectedRow);
                     }
-                    else if (SAPEvents.lastClickedMatrixUID == "mOper")
+                    else if (SAPEvents.LastClickedMatrixUID == "mOper")
                     {
-                        QCEvents.AddLineToOperationMatrix(oForm, activeMatrix, selectedRow);
+                        QCEvents.AddLineToOperationMatrix(oForm, activeMatrix, SelectedRow);
                     }
                 }
                 else if (pVal.MenuUID == "1293" && !pVal.BeforeAction)
                 {
                     oForm.Freeze(true);
-                    if (SAPEvents.lastClickedMatrixUID == "mTextures")
+                    if (SAPEvents.LastClickedMatrixUID == "mTextures")
                     {
-                        QCEvents.RemoveLinefromTexturesMatrix(oForm, activeMatrix, selectedRow);
+                        QCEvents.RemoveLinefromTexturesMatrix(oForm, activeMatrix, SelectedRow);
 
 
                     }
-                    else if (SAPEvents.lastClickedMatrixUID == "mOper")
+                    else if (SAPEvents.LastClickedMatrixUID == "mOper")
                     {
-                        QCEvents.RemoveLinefromOperationMatrix(oForm, activeMatrix, selectedRow);
+                        QCEvents.RemoveLinefromOperationMatrix(oForm, activeMatrix, SelectedRow);
                     }
 
 
